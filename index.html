@@ -547,6 +547,19 @@ input:focus, select:focus, textarea:focus { background-color: var(--field); }
 .meta-linhas b { color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .meta-linhas { border-top: 1px solid rgba(0, 113, 227, .15); padding-top: 10px; font-size: .875rem; }
 
+/* ---------- Cardio ---------- */
+.cardio .orient { font-size: .9375rem; color: var(--fg); background: var(--teal-soft); border-radius: 12px; padding: 10px 12px; margin-top: 8px; }
+.cardio-timer { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: var(--surface2); border-radius: 14px; padding: 12px 14px; }
+.cardio-timer strong { font-size: 2.25rem; font-weight: 600; letter-spacing: -0.02em; }
+.segmented { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--surface2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+.segmented button { border: 0; background: transparent; border-radius: 8px; padding: 8px 4px; font-weight: 500; color: var(--fg); transition: background-color .2s var(--ease), box-shadow .2s var(--ease); }
+.segmented button.on { background: var(--surface); font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.btn.ok-cardio { background: var(--teal-soft); color: var(--teal); font-weight: 600; }
+.cardio.feito { box-shadow: 0 0 0 2px var(--teal-soft), var(--shadow); }
+.cardio-edit { border-color: var(--teal-soft); }
+.tipo-chip { align-self: flex-start; padding: 8px 12px; }
+.semana-atual { font-size: 1.0625rem; font-weight: 600; padding: 12px 0; }
+
 </style>
 </head>
 <body>
@@ -761,16 +774,18 @@ function proximaAplicacao() {
 const mjRel = (diff) => diff > 1 ? `em ${diff} dias` : diff === 1 ? 'amanhã' : diff === 0 ? 'hoje' : `atrasada ${-diff} dia${diff < -1 ? 's' : ''}`;
 function proximaFicha() {
   const f = fichasOrd(); if (!f.length) return null;
+  const doDia = f.find(x => x.dia != null && Number(x.dia) === new Date().getDay());
+  if (doDia) return doDia;
   const ult = treinosOrd()[0]; if (!ult) return f[0];
   const i = f.findIndex(x => x.id === ult.fichaId);
   return f[(i + 1) % f.length];
 }
-const volume = (t) => t.exercicios.reduce((s, e) => s + e.series.filter(x => x.feito).reduce((a, x) => a + (num(x.carga) || 0) * (num(x.reps) || 0), 0), 0);
+const volume = (t) => t.exercicios.reduce((s, e) => s + (e.series || []).filter(x => x.feito).reduce((a, x) => a + (num(x.carga) || 0) * (num(x.reps) || 0), 0), 0);
 function ultimoDoExercicio(nome) {
   const n = nome.trim().toLowerCase();
   for (const t of treinosOrd()) {
     const e = t.exercicios.find(x => x.nome.trim().toLowerCase() === n);
-    if (e && e.series.some(s => s.feito)) return { ...e, series: e.series.filter(s => s.feito) };
+    if (e && e.series && e.series.some(s => s.feito)) return { ...e, series: e.series.filter(s => s.feito) };
   }
   return null;
 }
@@ -924,8 +939,8 @@ const VIEWS = {
         <div class="letter">${esc(letra)}</div>
         <div class="body">
           <div class="row between"><h3>${esc(f.nome)}</h3>${f.exemplo ? '<span class="chip amber">exemplo</span>' : ''}</div>
-          ${f.foco ? `<p class="hint">${esc(f.foco)}</p>` : ''}
-          <p class="list">${f.exercicios.map(e => esc(e.nome)).join(' · ') || 'Sem exercícios'}</p>
+          ${f.foco || f.dia != null ? `<p class="hint">${[f.dia != null && DIAS_SEMANA[f.dia] !== f.foco ? DIAS_SEMANA[f.dia] : '', esc(f.foco || '')].filter(Boolean).join(' · ')}</p>` : ''}
+          <p class="list">${f.exercicios.map(e => e.tipo === 'cardio' ? `${esc(e.nome)} ${num(e.minutos) || ''} min` : esc(e.nome)).join(' · ') || 'Sem exercícios'}</p>
           <div class="row"><button class="btn primary" data-a="iniciar" data-id="${f.id}" type="button">Começar</button><button class="btn" data-a="editarFicha" data-id="${f.id}" type="button">Editar</button></div>
         </div></div>`;
     }).join('');
@@ -1028,10 +1043,10 @@ const VIEWS = {
     const lim30 = addDias(hoje(), -29), lim7 = addDias(hoje(), -6);
     const t30 = tr.filter(t => t.data >= lim30);
     const vol7 = tr.filter(t => t.data >= lim7).reduce((s, t) => s + volume(t), 0);
-    const nomes = [...new Set(tr.flatMap(t => t.exercicios.filter(e => e.series.some(s => s.feito)).map(e => e.nome)))].sort();
+    const nomes = [...new Set(tr.flatMap(t => t.exercicios.filter(e => (e.series || []).some(s => s.feito)).map(e => e.nome)))].sort();
     if (!nomes.includes(exSel)) exSel = nomes[0] || '';
     const exPts = [...tr].reverse().map(t => {
-      const e = t.exercicios.find(x => x.nome === exSel); if (!e) return null;
+      const e = t.exercicios.find(x => x.nome === exSel && x.series); if (!e) return null;
       const m = Math.max(0, ...e.series.filter(s => s.feito).map(s => num(s.carga) || 0));
       return m ? { x: +dt(t.data) + (new Date(t.inicio).getHours() * 36e5), y: m } : null;
     }).filter(Boolean);
@@ -1057,6 +1072,7 @@ const VIEWS = {
           <div><span class="hint">Média/semana</span><strong>${fmt1(t30.length / 30 * 7)}</strong></div>
           <div><span class="hint">Volume 7 dias</span><strong>${fmt(vol7 / 1000, 1)} t</strong></div>
         </div>
+        ${resumoCardio7d()}
       </div>
       <div class="card">
         <p class="eyebrow">Carga máxima por exercício</p>
@@ -1074,7 +1090,7 @@ const VIEWS = {
 
 function viewSessao() {
   const s = sessao;
-  const exs = s.exercicios.map((e, ei) => `
+  const exs = s.exercicios.map((e, ei) => e.tipo === 'cardio' ? cardioSessaoHTML(e, ei) : `
     <div class="card ex">
       ${mostrarDemos() ? demoHTML(e.nome) : ''}
       <div><h3>${esc(e.nome)}</h3><p class="meta">${e.series.length} séries · ${esc(e.reps || '')} reps · descanso ${e.descanso}s</p>
@@ -1105,6 +1121,7 @@ function iniciar(fid) {
   sessao = {
     fichaId: f.id, fichaNome: f.nome, inicio: new Date().toISOString(),
     exercicios: f.exercicios.filter(e => e.nome.trim()).map(e => {
+      if (e.tipo === 'cardio') return cardioParaSessao(e);
       const ult = ultimoDoExercicio(e.nome);
       const n = Math.max(1, num(e.series) || 3);
       const repsPadrao = (String(e.reps || '').match(/\d+/) || [''])[0];
@@ -1175,10 +1192,10 @@ function fecharTimer() { clearInterval(timerInt); timerInt = null; $('#timer').h
 
 function finalizarSheet() {
   const min = Math.max(1, Math.round((Date.now() - new Date(sessao.inicio)) / 60000));
-  const feitas = sessao.exercicios.reduce((s, e) => s + e.series.filter(x => x.feito).length, 0);
+  const feitas = sessao.exercicios.reduce((s, e) => s + (e.series || []).filter(x => x.feito).length + (e.tipo === 'cardio' && e.feito ? 1 : 0), 0);
   abrirSheet(`
     <h2>Finalizar ${esc(sessao.fichaNome)}</h2>
-    ${feitas ? `<p class="muted">${feitas} séries feitas.</p>` : '<p class="muted" style="color:var(--amber)">Nenhuma série marcada como feita. Só as séries marcadas entram no histórico de carga.</p>'}
+    ${feitas ? `<p class="muted">${resumoFeito(sessao)}</p>` : '<p class="muted" style="color:var(--amber)">Nenhuma série marcada como feita. Só as séries marcadas entram no histórico de carga.</p>'}
     <form data-form="finalizar" style="display:flex;flex-direction:column;gap:12px">
       <div class="fields3">
         <div class="field"><label for="f-min">Duração (min)</label><input id="f-min" inputmode="numeric" value="${min}"></div>
@@ -1197,7 +1214,7 @@ function salvarTreino(f) {
     data: localISO(new Date(s.inicio)),
     duracaoMin: num(f.querySelector('#f-min').value), calorias: num(f.querySelector('#f-kcal').value),
     fcMedia: num(f.querySelector('#f-fc').value), obs: f.querySelector('#f-obs').value.trim(),
-    exercicios: s.exercicios.map(e => ({ nome: e.nome, series: e.series.map(x => ({ carga: num(x.carga) || 0, reps: num(x.reps) || 0, feito: !!x.feito })) }))
+    exercicios: s.exercicios.map(e => e.tipo === 'cardio' ? cardioParaSalvar(e) : ({ nome: e.nome, series: e.series.map(x => ({ carga: num(x.carga) || 0, reps: num(x.reps) || 0, feito: !!x.feito })) }))
   };
   store.put('treinos', t);
   sessao = null; lsSet(sessKey(), null); soltarWakeLock(); fecharTimer(); fecharSheet();
@@ -1210,7 +1227,7 @@ function verTreino(id) {
     <h2>${esc(t.fichaNome)}</h2>
     <p class="muted">${dataLonga(t.data)} · ${t.duracaoMin || '–'} min${t.calorias ? ' · ' + fmt(t.calorias) + ' kcal' : ''}${t.fcMedia ? ' · FC ' + fmt(t.fcMedia) + ' bpm' : ''}</p>
     ${t.obs ? `<p>${esc(t.obs)}</p>` : ''}
-    <div class="card">${t.exercicios.map(e => `<div class="item"><span><strong>${esc(e.nome)}</strong><br><span class="hint num">${e.series.filter(s => s.feito).map(s => `${fmt1(s.carga)}kg×${s.reps}`).join(' · ') || 'não feito'}</span></span><span></span><span></span></div>`).join('')}</div>
+    <div class="card">${t.exercicios.map(e => `<div class="item"><span><strong>${esc(e.nome)}</strong><br><span class="hint num">${e.tipo === 'cardio' ? cardioResumo(e) : (e.series.filter(s => s.feito).map(s => `${fmt1(s.carga)}kg×${s.reps}`).join(' · ') || 'não feito')}</span></span><span></span><span></span></div>`).join('')}</div>
     <p class="hint">Volume total: ${fmt(volume(t))} kg</p>
     <button class="btn danger" data-a="delTreino" data-id="${t.id}" type="button">Apagar este treino</button>`);
 }
@@ -1232,14 +1249,15 @@ function renderFicha() {
       <div class="field"><label for="fe-nome">Nome</label><input id="fe-nome" data-fe="nome" value="${esc(f.nome)}"></div>
       <div class="field"><label for="fe-foco">Foco</label><input id="fe-foco" data-fe="foco" value="${esc(f.foco)}" placeholder="ex.: Inferiores"></div>
     </div>
-    ${f.exercicios.map((e, i) => `<div class="ex-edit">
+    <div class="field"><label for="fe-dia">Dia da semana</label><select id="fe-dia" data-fe="dia"><option value="">Sem dia fixo</option>${DIAS_SEMANA.map((d, i) => `<option value="${i}" ${f.dia != null && Number(f.dia) === i ? 'selected' : ''}>${d}</option>`).join('')}</select></div>
+    ${f.exercicios.map((e, i) => e.tipo === 'cardio' ? cardioEditHTML(e, i) : `<div class="ex-edit">
       <div class="top-row"><input aria-label="Exercício ${i + 1}" placeholder="Nome do exercício" data-fe="nome" data-i="${i}" value="${esc(e.nome)}"><button class="x" data-a="feRem" data-i="${i}" type="button" aria-label="Remover exercício">×</button></div>
       <div class="fields3">
         <div class="field"><label for="fe-s${i}">Séries</label><input id="fe-s${i}" inputmode="numeric" data-fe="series" data-i="${i}" value="${esc(e.series)}"></div>
         <div class="field"><label for="fe-r${i}">Reps</label><input id="fe-r${i}" data-fe="reps" data-i="${i}" value="${esc(e.reps)}"></div>
         <div class="field"><label for="fe-d${i}">Descanso (s)</label><input id="fe-d${i}" inputmode="numeric" data-fe="descanso" data-i="${i}" value="${esc(e.descanso)}"></div>
       </div></div>`).join('')}
-    <button class="btn" data-a="feAdd" type="button">+ Adicionar exercício</button>
+    <div class="row"><button class="btn" data-a="feAdd" type="button">+ Musculação</button><button class="btn" data-a="feAddCardio" type="button">+ Cardio</button></div>
     <button class="cta" data-a="feSalvar" type="button">Salvar ficha</button>
     ${f.novo ? '' : `<button class="link-danger" data-a="feExcluir" type="button">Excluir ficha</button>`}`);
 }
@@ -1257,6 +1275,7 @@ function abrirPerfil() {
       <div class="field"><label for="p-nome">Como quer ser chamada</label><input id="p-nome" data-p="nome" value="${esc(p.nome || '')}" placeholder="${esc(primeiroNome())}"></div>
     </div>
     ${cardMeta()}
+    ${cardPlano()}
     ${cardLembretes()}
     ${cardStrava()}
     <div class="card">
@@ -1337,7 +1356,8 @@ const ACOES = {
   feSalvar() {
     const f = fichaEdit;
     if (!f.nome.trim()) { toast('Dê um nome para a ficha.'); return; }
-    f.exercicios = f.exercicios.filter(e => e.nome.trim()).map(e => ({ nome: e.nome.trim(), series: num(e.series) || 3, reps: String(e.reps || '').trim(), descanso: num(e.descanso) || 60 }));
+    f.exercicios = f.exercicios.filter(e => e.nome.trim()).map(e => e.tipo === 'cardio' ? cardioDaEdicao(e) : ({ nome: e.nome.trim(), series: num(e.series) || 3, reps: String(e.reps || '').trim(), descanso: num(e.descanso) || 60 }));
+    f.dia = f.dia === '' || f.dia == null ? null : Number(f.dia);
     delete f.novo; delete f.exemplo;
     store.put('fichas', f); fecharSheet(); render(); toast('Ficha salva.');
   },
@@ -1537,6 +1557,168 @@ function cardMeta() {
     <div class="field"><label for="p-ritmo">Ritmo de perda</label><select id="p-ritmo" data-p="ritmo">${opt(RITMOS, p.ritmo || '500')}</select></div>
     <div id="meta-calc">${metaCalcHTML()}</div>
     <p class="disclaimer">Estimativa pela fórmula de Mifflin-St Jeor. Com Mounjaro o apetite costuma cair: evite ficar muito abaixo da meta e priorize proteína. Ajustes de dieta devem seguir a orientação do médico ou da nutricionista.</p>
+  </div>`;
+}
+
+/* =====================================================================
+   CARDIO — esteira, caminhada, bike etc. dentro das fichas
+   Exercício de cardio: { tipo: 'cardio', nome, minutos, obs, plano: [{ de, ate, texto }] }
+   "plano" guarda a orientação por semana (ex.: semanas 1–2, 3–4…), usando a
+   data de início do plano (Ajustes) para mostrar a semana certa.
+   ===================================================================== */
+const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const SENSACOES = ['Leve', 'Moderado', 'Difícil'];
+
+function semanaPlano() {
+  const i = cfg().inicioPlano; if (!i) return null;
+  const d = diasEntre(i, hoje());
+  return d < 0 ? 1 : Math.floor(d / 7) + 1;
+}
+function planoDaSemana(e) {
+  const pl = Array.isArray(e.plano) ? e.plano : [];
+  if (!pl.length) return null;
+  const w = semanaPlano() || 1;
+  const fim = Math.max(...pl.map(x => x.ate));
+  const p = pl.find(x => w >= x.de && w <= x.ate) || (w > fim ? pl[pl.length - 1] : pl[0]);
+  return { semana: w, ...p };
+}
+const planoTexto = (pl) => (pl || []).map(p => `${p.de}${p.ate !== p.de ? '–' + p.ate : ''}: ${p.texto}`).join('\n');
+function lerPlanoTexto(t) {
+  return String(t || '').split(/\n+/).map(l => {
+    const m = l.match(/^\s*(\d+)\s*(?:[–-]\s*(\d+))?\s*[:.)\-–]\s*(.+)$/);
+    return m ? { de: +m[1], ate: +(m[2] || m[1]), texto: m[3].trim() } : null;
+  }).filter(Boolean);
+}
+
+/* ---------- ficha → sessão → histórico ---------- */
+function cardioParaSessao(e) {
+  const p = planoDaSemana(e);
+  let min = num(e.minutos) || 20;
+  // plano tipo "30–40 min" (sem etapas) define a duração da semana
+  const mw = p && !/;/.test(p.texto) && p.texto.match(/^(\d{1,3})\s*(?:[–-]\s*(\d{1,3}))?\s*min/);
+  if (mw) min = num(mw[2] || mw[1]);
+  return {
+    tipo: 'cardio', nome: e.nome, minutos: min,
+    orientacao: p ? p.texto : (e.obs || ''), semana: p ? p.semana : null,
+    feitoMin: String(min), km: '', sensacao: '', feito: false, timerFim: null, restante: null
+  };
+}
+const cardioParaSalvar = (e) => ({ tipo: 'cardio', nome: e.nome, minutos: num(e.feitoMin) || 0, km: num(e.km) || null, sensacao: e.sensacao || '', feito: !!e.feito });
+function cardioResumo(e) {
+  if (!e.feito) return 'não feito';
+  return [`${fmt(e.minutos)} min`, e.km ? `${fmt1(e.km)} km` : '', e.sensacao].filter(Boolean).join(' · ');
+}
+function resumoFeito(s) {
+  const series = s.exercicios.reduce((a, e) => a + (e.series || []).filter(x => x.feito).length, 0);
+  const c = s.exercicios.filter(e => e.tipo === 'cardio' && e.feito);
+  return [series ? `${series} séries feitas` : '', c.length ? `cardio: ${c.map(e => `${esc(e.nome)} ${fmt(num(e.feitoMin) || 0)} min`).join(', ')}` : ''].filter(Boolean).join(' · ') + '.';
+}
+function cardioDaEdicao(e) {
+  return {
+    tipo: 'cardio', nome: e.nome.trim(), minutos: num(e.minutos) || 20,
+    plano: lerPlanoTexto(e.planoTxt != null ? e.planoTxt : planoTexto(e.plano)), obs: String(e.obs || '').trim()
+  };
+}
+function resumoCardio7d() {
+  const lim = addDias(hoje(), -6);
+  const min = S.treinos.filter(t => t.data >= lim).reduce((s, t) => s + t.exercicios.filter(e => e.tipo === 'cardio' && e.feito).reduce((a, e) => a + (num(e.minutos) || 0), 0), 0);
+  const st = S.atividades.filter(a => a.data >= lim && !ehForca(a.tipo)).reduce((s, a) => s + (a.duracaoMin || 0), 0);
+  if (!min && !st) return '<p class="hint">Cardio nos últimos 7 dias: nenhum registro ainda.</p>';
+  return `<p class="hint">Cardio nos últimos 7 dias: <b>${fmt(min)} min</b> no app${st ? ` · ${fmt(st)} min em atividades do Strava` : ''}.</p>`;
+}
+
+/* ---------- editor de ficha ---------- */
+function cardioEditHTML(e, i) {
+  return `<div class="ex-edit cardio-edit">
+    <div class="top-row"><input aria-label="Cardio ${i + 1}" placeholder="ex.: Esteira" data-fe="nome" data-i="${i}" value="${esc(e.nome)}"><button class="x" data-a="feRem" data-i="${i}" type="button" aria-label="Remover cardio">×</button></div>
+    <div class="fields2">
+      <div class="field"><label for="fe-m${i}">Minutos</label><input id="fe-m${i}" inputmode="numeric" data-fe="minutos" data-i="${i}" value="${esc(e.minutos)}"></div>
+      <div class="field"><label>Tipo</label><span class="chip teal tipo-chip">Cardio</span></div>
+    </div>
+    <div class="field"><label for="fe-o${i}">Orientação</label><input id="fe-o${i}" data-fe="obs" data-i="${i}" value="${esc(e.obs || '')}" placeholder="ex.: caminhada rápida, inclinação 2%"></div>
+    <div class="field"><label for="fe-p${i}">Plano por semana (opcional)</label><textarea id="fe-p${i}" rows="4" data-fe="planoTxt" data-i="${i}" placeholder="1–2: 5 min leve; 10 min rápido; 5 min leve&#10;3–4: alternar 1 min trote + 2 min caminhada">${esc(e.planoTxt != null ? e.planoTxt : planoTexto(e.plano))}</textarea></div>
+  </div>`;
+}
+
+/* ---------- treino em andamento ---------- */
+function restanteCardio(e) {
+  if (e.timerFim) return Math.max(0, Math.ceil((e.timerFim - Date.now()) / 1000));
+  return e.restante != null ? e.restante : e.minutos * 60;
+}
+function cardioSessaoHTML(e, ei) {
+  const r = restanteCardio(e), total = e.minutos * 60;
+  const rotulo = e.timerFim ? 'Pausar' : (r < total && r > 0 ? 'Continuar' : 'Iniciar');
+  return `<div class="card ex cardio ${e.feito ? 'feito' : ''}">
+    ${mostrarDemos() ? demoHTML(e.nome) : ''}
+    <div>
+      <div class="row between"><h3>${esc(e.nome)}</h3><span class="chip teal">Cardio · ${fmt(e.minutos)} min</span></div>
+      ${e.semana ? `<p class="meta">Semana ${e.semana} do plano</p>` : ''}
+      ${e.orientacao ? `<p class="orient">${esc(e.orientacao)}</p>` : ''}
+    </div>
+    <div class="cardio-timer">
+      <strong id="ct-${ei}" class="num">${mmss(r)}</strong>
+      <div class="row"><button class="btn primary" data-a="cardioPlay" data-e="${ei}" type="button">${rotulo}</button><button class="btn" data-a="cardioZerar" data-e="${ei}" type="button">Zerar</button></div>
+    </div>
+    <div class="fields2">
+      <div class="field"><label for="cm-${ei}">Minutos feitos</label><input id="cm-${ei}" inputmode="numeric" data-cf="feitoMin" data-e="${ei}" value="${esc(e.feitoMin)}"></div>
+      <div class="field"><label for="ck-${ei}">Distância (km)</label><input id="ck-${ei}" inputmode="decimal" data-cf="km" data-e="${ei}" placeholder="opcional" value="${esc(e.km)}"></div>
+    </div>
+    <div class="field"><label>Como foi?</label><div class="segmented" role="group" aria-label="Como foi o cardio">${SENSACOES.map(v => `<button type="button" data-a="cardioSens" data-e="${ei}" data-v="${v}" class="${e.sensacao === v ? 'on' : ''}" aria-pressed="${e.sensacao === v}">${v}</button>`).join('')}</div></div>
+    <button class="btn wide ${e.feito ? 'ok-cardio' : 'primary'}" data-a="cardioOk" data-e="${ei}" type="button">${e.feito ? '✓ Cardio concluído' : 'Marcar cardio como feito'}</button>
+  </div>`;
+}
+
+Object.assign(ACOES, {
+  feAddCardio() { fichaEdit.exercicios.push({ tipo: 'cardio', nome: 'Esteira', minutos: 20, obs: '', plano: [] }); renderFicha(); },
+  cardioPlay(b) {
+    destravarAudio();
+    const e = sessao.exercicios[+b.dataset.e];
+    if (e.timerFim) { e.restante = restanteCardio(e); e.timerFim = null; }
+    else { let r = restanteCardio(e); if (!r) r = e.minutos * 60; e.timerFim = Date.now() + r * 1000; pedirWakeLock(); }
+    salvarSessao(); render();
+  },
+  cardioZerar(b) { const e = sessao.exercicios[+b.dataset.e]; e.timerFim = null; e.restante = null; salvarSessao(); render(); },
+  cardioSens(b) { const e = sessao.exercicios[+b.dataset.e]; e.sensacao = e.sensacao === b.dataset.v ? '' : b.dataset.v; salvarSessao(); render(); },
+  cardioOk(b) {
+    const e = sessao.exercicios[+b.dataset.e];
+    e.feito = !e.feito;
+    if (e.feito && e.timerFim) { e.restante = restanteCardio(e); e.timerFim = null; }
+    if (e.feito && e.restante != null && e.restante < e.minutos * 60) e.feitoMin = String(Math.max(1, Math.round((e.minutos * 60 - e.restante) / 60)));
+    salvarSessao(); render();
+  }
+});
+
+function inputCardio(t) {
+  if (!t.dataset.cf || !sessao) return false;
+  sessao.exercicios[+t.dataset.e][t.dataset.cf] = t.value; salvarSessao();
+  return true;
+}
+
+// contagem regressiva do cardio
+setInterval(() => {
+  if (!sessao) return;
+  sessao.exercicios.forEach((e, ei) => {
+    if (e.tipo !== 'cardio' || !e.timerFim) return;
+    const r = restanteCardio(e);
+    const el = document.getElementById('ct-' + ei); if (el) el.textContent = mmss(r);
+    if (r <= 0) {
+      e.timerFim = null; e.restante = 0; e.feito = true; e.feitoMin = String(e.minutos);
+      bip(); try { navigator.vibrate && navigator.vibrate([300, 120, 300]); } catch (err) { }
+      salvarSessao(); if ($('#sheet').hidden) render(); toast(`${e.nome} concluído!`);
+    }
+  });
+}, 1000);
+
+/* ---------- ajustes: início do plano ---------- */
+function cardPlano() {
+  const w = semanaPlano();
+  return `<div class="card">
+    <h3>Plano de treino</h3>
+    <p class="hint">A data de início define a semana do plano e qual orientação de cardio aparece em cada treino.</p>
+    <div class="fields2">
+      <div class="field"><label for="p-ini">Início do plano</label><input id="p-ini" type="date" data-p="inicioPlano" value="${esc(cfg().inicioPlano || '')}"></div>
+      <div class="field"><label>Semana atual</label><p class="semana-atual">${w ? `Semana ${w}` : '–'}</p></div>
+    </div>
   </div>`;
 }
 
@@ -1874,6 +2056,13 @@ function parseTexto(txt) {
     if (!l) continue;
     if (/^(exerc[ií]cios?|s[ée]ries)\b/i.test(l)) continue;           // cabeçalho de tabela
     if (ehCabecalho(l)) { nova(nomeFicha(l, fichas.length)); pendente = ''; continue; }
+    const c = l.match(RX_CARDIO);
+    if (c && !RX_SXR.test(l)) {
+      if (!cur) nova({ nome: 'Treino A', foco: '' });
+      const nc = limparNome(l.slice(0, l.search(/\d/)).replace(/\b(por|de|durante|em)\s*$/i, '')) || c[1];
+      cur.exercicios.push({ tipo: 'cardio', nome: nc.charAt(0).toUpperCase() + nc.slice(1), minutos: num(c[2]), obs: '', plano: [] });
+      pendente = ''; continue;
+    }
     let m = l.match(RX_SXR) || l.match(RX_SERIES);
     let nome, series = 3, reps = '10-12', resto = '';
     if (m) {
@@ -1892,7 +2081,52 @@ function parseTexto(txt) {
     if (!cur) nova({ nome: 'Treino A', foco: '' });
     cur.exercicios.push({ nome: nome.charAt(0).toUpperCase() + nome.slice(1), series, reps, descanso: lerDescanso(resto) || descansoPadrao });
   }
-  return fichas.filter(f => f.exercicios.length);
+  const res = fichas.filter(f => f.exercicios.length);
+  completarCardio(String(txt), res);
+  res.forEach(f => { if (f.dia == null) { const d = diaDoTexto(f.foco) ?? diaDoTexto(f.nome); if (d != null) f.dia = d; } });
+  return res;
+}
+
+const RX_CARDIO = /^(esteira|caminhada|caminhar|corrida|trote|bike|bicicleta|el[ií]ptico|escada|transport\w*|remo|spinning|cardio|pular corda)\b[^0-9\n]{0,30}?(\d{1,3})\s*(?:min|minutos|')/i;
+const DIAS_MAPA = { domingo: 0, dom: 0, segunda: 1, seg: 1, terca: 2, ter: 2, quarta: 3, qua: 3, quinta: 4, qui: 4, sexta: 5, sex: 5, sabado: 6, sab: 6 };
+function diaDoTexto(t) {
+  const w = normTxt(t || '').split(/[^a-z]+/).find(p => p in DIAS_MAPA);
+  return w ? DIAS_MAPA[w] : null;
+}
+// Cardio descrito fora das fichas: "20 min de esteira primeiro" vira o 1º exercício de cada ficha;
+// "Domingo — caminhada" com "Semanas 1–2: 20–30 min…" vira uma ficha de caminhada com plano por semana.
+function completarCardio(txt, fichas) {
+  if (!fichas.length) return;
+  const g = txt.match(/(\d{1,3})\s*min(?:utos)?\s+de\s+(esteira|bike|bicicleta|el[ií]ptico|caminhada|cardio)\b/i);
+  if (g && !fichas.some(f => f.exercicios.some(e => e.tipo === 'cardio'))) {
+    const nomeC = g[2].charAt(0).toUpperCase() + g[2].slice(1).toLowerCase();
+    const antes = /antes|primeiro|in[ií]cio/i.test(txt.slice(Math.max(0, g.index - 80), g.index + 120));
+    fichas.forEach(f => f.exercicios[antes ? 'unshift' : 'push']({ tipo: 'cardio', nome: nomeC, minutos: num(g[1]), obs: '', plano: [] }));
+  }
+  const linhas = txt.split(/\r?\n/);
+  // tabela de progressão do cardio: linhas "1–2   5 min a 3,0 km/h; …" até a seção de musculação
+  const ini = linhas.findIndex(l => /(plano de esteira|progress\w*\s+do\s+cardio)/i.test(l));
+  if (ini >= 0) {
+    const plano = [];
+    for (let k = ini + 1; k < linhas.length && !/muscula/i.test(linhas[k]); k++) {
+      const m = linhas[k].trim().match(/^(\d{1,2})\s*[–-]\s*(\d{1,2})\s{2,}(.+)$/);
+      if (!m) continue;
+      let texto = m[3].split(/\s{2,}/)[0].trim();
+      if (linhas[k + 1] && !/^\s*\d{1,2}\s*[–-]/.test(linhas[k + 1]) && !/muscula/i.test(linhas[k + 1])) {
+        const cont = linhas[k + 1].trim().match(/^[^.]*\./);
+        if (cont) texto += ' ' + cont[0];
+      }
+      plano.push({ de: +m[1], ate: +m[2], texto });
+    }
+    if (plano.length) fichas.forEach(f => f.exercicios.forEach(e => { if (e.tipo === 'cardio' && !(e.plano && e.plano.length)) e.plano = plano; }));
+  }
+  const i = linhas.findIndex(l => /domingo/i.test(l) && /caminhada/i.test(l) && l.trim().length < 45);
+  if (i >= 0 && !fichas.some(f => /caminhada/i.test(f.nome))) {
+    const bloco = linhas.slice(i + 1, i + 5).join(' ');
+    const plano = [...bloco.matchAll(/semanas?\s*(\d+)\s*[–-]\s*(\d+)\s*:\s*([^.]+)/gi)].map(m => ({ de: +m[1], ate: +m[2], texto: m[3].trim().replace(/,\s*se$/i, '') }));
+    const mins = plano.length ? (plano[0].texto.match(/(\d+)\s*(?:[–-]\s*(\d+))?\s*min/) || []) : [];
+    fichas.push({ nome: 'Caminhada', foco: 'Domingo', dia: 0, exercicios: [{ tipo: 'cardio', nome: 'Caminhada', minutos: num(mins[2] || mins[1]) || 30, obs: 'Ritmo em que consiga conversar', plano }] });
+  }
 }
 
 function parseTabela(rows) {
@@ -1921,7 +2155,14 @@ async function lerArquivo(file) {
     const j = JSON.parse(await file.text());
     const arr = Array.isArray(j) ? j : j.fichas;
     if (!Array.isArray(arr)) throw new Error('JSON sem lista de fichas');
-    return arr.map(f => ({ nome: f.nome || 'Treino', foco: f.foco || '', exercicios: (f.exercicios || []).map(e => ({ nome: e.nome, series: num(e.series) || 3, reps: String(e.reps || '10-12'), descanso: num(e.descanso) || 60 })) }));
+    const fs = arr.map(f => ({
+      nome: f.nome || 'Treino', foco: f.foco || '', dia: f.dia == null || f.dia === '' ? null : Number(f.dia),
+      exercicios: (f.exercicios || []).map(e => e.tipo === 'cardio'
+        ? { tipo: 'cardio', nome: e.nome, minutos: num(e.minutos) || 20, obs: e.obs || '', plano: Array.isArray(e.plano) ? e.plano.map(p => ({ de: +p.de, ate: +(p.ate || p.de), texto: String(p.texto || '') })) : [] }
+        : { nome: e.nome, series: num(e.series) || 3, reps: String(e.reps || '10-12'), descanso: num(e.descanso) || 60 })
+    }));
+    if (j.inicioPlano) fs.inicioPlano = j.inicioPlano;
+    return fs;
   }
   if (/\.(xlsx|xls|ods)$/.test(nome)) {
     await carregarScript(LIB_XLSX);
@@ -1978,7 +2219,10 @@ function mostrarPrevia(fichas) {
   const total = fichas.reduce((s, f) => s + f.exercicios.length, 0);
   box.innerHTML = `<h3>Encontrei ${fichas.length} ficha${fichas.length > 1 ? 's' : ''} e ${total} exercícios</h3>
     ${fichas.map(f => `<div class="card prev"><strong>${esc(f.nome)}${f.foco ? ' · ' + esc(f.foco) : ''}</strong>
-      ${f.exercicios.map(e => `<div class="item"><span>${esc(e.nome)}</span><span class="k">${e.series}×${esc(e.reps)} · ${e.descanso}s</span><span></span></div>`).join('')}</div>`).join('')}
+      ${f.exercicios.map(e => e.tipo === 'cardio'
+        ? `<div class="item"><span>${esc(e.nome)} <span class="chip teal">cardio</span>${e.plano && e.plano.length ? `<br><span class="hint">plano para ${Math.max(...e.plano.map(p => p.ate))} semanas</span>` : ''}</span><span class="k">${fmt(e.minutos)} min</span><span></span></div>`
+        : `<div class="item"><span>${esc(e.nome)}</span><span class="k">${e.series}×${esc(e.reps)} · ${e.descanso}s</span><span></span></div>`).join('')}</div>`).join('')}
+    ${fichas.inicioPlano ? `<p class="hint">Início do plano: ${dataCurta(fichas.inicioPlano)}.</p>` : ''}
     <button class="cta" data-a="impAdd" type="button">Adicionar às minhas fichas</button>
     <button class="btn danger wide" data-a="impSubst" type="button">Substituir as fichas atuais</button>
     <p class="hint">Dá para ajustar tudo depois em Editar.</p>`;
@@ -1988,7 +2232,9 @@ function salvarImport(substituir) {
   if (!impPrev) return;
   if (substituir) S.fichas.slice().forEach(f => store.del('fichas', f.id));
   const base = S.fichas.length;
-  impPrev.forEach((f, i) => store.put('fichas', { id: novoId(), nome: f.nome, foco: f.foco, ordem: base + i, exercicios: f.exercicios }));
+  impPrev.forEach((f, i) => store.put('fichas', { id: novoId(), nome: f.nome, foco: f.foco, dia: f.dia ?? null, ordem: base + i, exercicios: f.exercicios }));
+  const temPlano = impPrev.some(f => f.exercicios.some(e => e.plano && e.plano.length));
+  if (impPrev.inicioPlano || (temPlano && !cfg().inicioPlano)) salvarCfg({ inicioPlano: impPrev.inicioPlano || hoje() });
   const n = impPrev.length; impPrev = null; fecharSheet(); aba = 'treino'; render(true);
   toast(`${n} ficha${n > 1 ? 's importadas' : ' importada'}.`);
 }
@@ -2358,6 +2604,18 @@ const PADROES = {
     A: { hip: [80, 86], t: -90, th: 140, sh: -5, ua: 100, fa: -80 }, B: { hip: [80, 86], t: -62, th: 140, sh: -5, ua: 125, fa: -55 },
     dicas: ['Joelhos dobrados e pés apoiados no chão', 'Suba o tronco contraindo o abdômen, sem puxar o pescoço', 'Desça devagar sem relaxar totalmente']
   },
+  // cardio: passada alternando as pernas
+  esteira: {
+    A: { hip: [72, 50], t: 4, th: 22, sh: 4, th2: -20, sh2: -42, ua: -28, fa: 15 },
+    B: { hip: [72, 50], t: 4, th: -20, sh: -42, th2: 22, sh2: 4, ua: 26, fa: 70 },
+    est: `<line class="eq" x1="36" y1="${G}" x2="118" y2="${G}"/><line class="eq thin" x1="40" y1="${G + 4}" x2="114" y2="${G + 4}"/><line class="eq" x1="114" y1="${G}" x2="122" y2="50"/><line class="eq" x1="122" y1="50" x2="104" y2="48"/>`,
+    dicas: ['Postura ereta, olhando para a frente', 'Passos naturais, sem se pendurar no apoio da esteira', 'Mantenha um ritmo em que consiga conversar']
+  },
+  caminhada: {
+    A: { hip: [80, 50], t: 4, th: 22, sh: 4, th2: -20, sh2: -42, ua: -28, fa: 15 },
+    B: { hip: [80, 50], t: 4, th: -20, sh: -42, th2: 22, sh2: 4, ua: 26, fa: 70 },
+    dicas: ['Postura ereta e ombros relaxados', 'Pise com o calcanhar e role até a ponta do pé', 'Ritmo em que consiga conversar; não precisa correr']
+  },
   // vistas de frente
   lateral: {
     front: true, A: { a: 8 }, B: { a: 85 },
@@ -2405,7 +2663,8 @@ const MAPA_PADROES = [
   [/remada (curvada|unilateral|cavalinho)|serrote|curvada/, 'curvada'], [/remada/, 'remada'],
   [/desenvolvimento|militar|arnold|press de ombro/, 'desenvolvimento'], [/lateral/, 'lateral'], [/frontal/, 'frontal'],
   [/triceps|testa|frances|pulley/, 'triceps'], [/rosca|biceps|martelo/, 'rosca'], [/gluteo|coice|kickback/, 'gluteo'],
-  [/prancha|plank/, 'prancha'], [/abdominal|abdomen|crunch|infra/, 'abdominal']
+  [/prancha|plank/, 'prancha'], [/abdominal|abdomen|crunch|infra/, 'abdominal'],
+  [/esteira/, 'esteira'], [/caminhada|corrida|trote|caminhar/, 'caminhada']
 ];
 const padraoDe = (nome) => { const n = normTxt(nome); const m = MAPA_PADROES.find(([re]) => re.test(n)); return m ? m[1] : null; };
 
@@ -2486,7 +2745,7 @@ Object.assign(ACOES, {
 });
 
 /* ganchos de eventos usados pelo app principal */
-function extraInput(t) { return inputAlimento(t); }
+function extraInput(t) { return inputCardio(t) || inputAlimento(t); }
 function extraChange(t) {
   if (t.id === 'imp-file') { changeImport(t); return true; }
   if (t.id === 'lb-peso' || t.id === 'lb-mj') { changeLembretes(t); return true; }

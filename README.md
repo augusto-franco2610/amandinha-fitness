@@ -72,6 +72,8 @@ Treino B - Superiores
 Puxada frontal 4 séries de 12
 ```
 
+Cardio também é importado: linhas como `Esteira 20 min` ou `Caminhada 30 min` viram exercícios de cardio, e tabelas de progressão por semana ("1–2: …", "Semanas 3–4: …") viram o plano semanal. Dias da semana no título da ficha ("Segunda — Treino A") são lidos, e o app sugere a ficha do dia. A data de início do plano fica em Ajustes → Plano de treino.
+
 Foto ou PDF escaneado ainda não é lido automaticamente.
 
 ## 7. Servidor do Strava e dos lembretes (Cloudflare, grátis)
