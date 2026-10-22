@@ -1,0 +1,18 @@
+# Para quem prefere publicar pela linha de comando (npx wrangler deploy).
+# Pelo painel do Cloudflare não precisa deste arquivo: veja o README.
+name = "amandinha-fitness"
+main = "worker.js"
+compatibility_date = "2026-06-01"
+
+[vars]
+APP_URL = "https://SEU-USUARIO.github.io/amandinha-fitness/"
+STRAVA_CLIENT_ID = "COLE_O_CLIENT_ID"
+# STRAVA_CLIENT_SECRET: npx wrangler secret put STRAVA_CLIENT_SECRET
+
+[[kv_namespaces]]
+binding = "SUBS"
+id = "COLE_O_ID_DO_KV"
+
+[triggers]
+# UTC. Brasília = UTC-3 → 10:00 UTC = 07:00; sábado 01:00 UTC = sexta 22:00
+crons = ["0 10 * * *", "0 1 * * SAT"]

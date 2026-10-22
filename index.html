@@ -1,0 +1,2490 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Amandinha Fitness</title>
+<meta name="theme-color" content="#f5f5f7">
+<meta name="color-scheme" content="light only">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Amandinha">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:0;color-scheme:light}
+body{margin:0} img{max-width:100%} [hidden]{display:none!important}
+/* Layout: app de uma coluna (máx. 560px), barra de título translúcida, tab bar estilo iOS, sheets que sobem do rodapé.
+   Tema claro obrigatório (sem modo escuro). Identidade inspirada na linguagem visual da Apple (iOS/macOS): neutros #F5F5F7/#1D1D1F/#6E6E73, azul de ação, fonte do sistema (SF Pro). */
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --surface2: #f5f5f7;
+  --fg: #1d1d1f;
+  --muted: #6e6e73;
+  --line: #d2d2d7;
+  --accent: #0071e3;
+  --accent-ink: #ffffff;
+  --accent-soft: #e8f1fc;
+  --teal: #248a3d;
+  --teal-soft: #e5f5e9;
+  --amber: #b25000;
+  --amber-soft: #fff1e0;
+  --danger: #d70015;
+  --danger-soft: #fdecee;
+  --strava: #e34402;
+  --strava-soft: #fde9df;
+  --glass: rgba(245, 245, 247, .78);
+  --tabglass: rgba(255, 255, 255, .78);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 4px 18px rgba(0, 0, 0, .045);
+  --font-d: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-b: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --r: 20px;
+  --ease: cubic-bezier(.32, .72, 0, 1);
+  --field: #ffffff;
+  color-scheme: light only;
+}
+html, body { background: #f5f5f7; color: #1d1d1f; }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-b); font-size: 16px; line-height: 1.45;
+  -webkit-tap-highlight-color: transparent;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--font-d); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: 1.9rem; line-height: 1.1; font-weight: 700; }
+h2 { font-size: 1.25rem; font-weight: 650; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.eyebrow { font-size: .72rem; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 600; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- Boot / login ---------- */
+.boot { min-height: 60vh; display: grid; place-items: center; color: var(--muted); }
+.login {
+  min-height: 100vh; display: flex; flex-direction: column; justify-content: center; gap: 28px;
+  max-width: 460px; margin: 0 auto;
+  padding-block: 40px;
+  padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px));
+}
+.wordmark { font-family: var(--font-d); font-weight: 800; font-size: clamp(3rem, 15vw, 4.4rem); line-height: .9; letter-spacing: -0.04em; }
+.wordmark span { display: block; color: var(--accent); font-weight: 500; font-style: italic; letter-spacing: -0.02em; }
+.login .lead { font-size: 1.1rem; color: var(--muted); max-width: 30ch; }
+.btn-google {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  background: var(--fg); color: var(--bg); border: 0; border-radius: 999px; padding: 16px 22px; font-weight: 600; font-size: 1rem;
+}
+.btn-google svg { width: 20px; height: 20px; background: #fff; border-radius: 50%; padding: 2px; }
+.login .note { font-size: .88rem; color: var(--muted); background: var(--surface2); padding: 12px 14px; border-radius: 12px; }
+.login .err { color: var(--danger); font-size: .92rem; }
+
+/* ---------- Shell ---------- */
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg);
+  display: flex; align-items: center; justify-content: space-between;
+  padding-block: 12px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.brand { font-family: var(--font-d); font-weight: 800; font-size: 1.15rem; letter-spacing: -0.03em; }
+.brand span { color: var(--accent); font-style: italic; font-weight: 500; margin-left: 4px; }
+.avatar {
+  width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface);
+  display: grid; place-items: center; overflow: hidden; font-weight: 700; font-family: var(--font-d); padding: 0;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+main {
+  max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;
+  padding-top: 4px;
+  padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main.has-timer { padding-bottom: calc(170px + env(safe-area-inset-bottom, 0px)); }
+.demo-flag { font-size: .8rem; background: var(--amber-soft); color: var(--amber); padding: 8px 12px; border-radius: 10px; }
+
+.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 25;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  padding-top: 6px; padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);
+}
+.tabs button {
+  background: none; border: 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  font-size: .68rem; font-weight: 600; color: var(--muted); padding: 6px 0;
+}
+.tabs svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tabs button[aria-current="page"] { color: var(--accent); }
+
+/* ---------- Common blocks ---------- */
+.card { background: var(--surface); border-radius: var(--r); padding: 18px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-top: 8px; }
+.sec { font-size: 1rem; padding-top: 8px; color: var(--muted); font-family: var(--font-b); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: .78rem; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.big { font-family: var(--font-d); font-size: 2.2rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+.big small { font-size: .9rem; font-weight: 500; color: var(--muted); margin-left: 3px; letter-spacing: 0; }
+.chip { display: inline-flex; align-items: center; gap: 4px; font-size: .74rem; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--surface2); color: var(--muted); white-space: nowrap; }
+.chip.pink { background: var(--accent-soft); color: var(--accent); }
+.chip.teal { background: var(--teal-soft); color: var(--teal); }
+.chip.amber { background: var(--amber-soft); color: var(--amber); }
+.delta.down { color: var(--teal); }
+.delta.up { color: var(--amber); }
+.empty { color: var(--muted); font-size: .92rem; padding: 6px 0; }
+.hint { font-size: .82rem; color: var(--muted); }
+.disclaimer { font-size: .8rem; color: var(--muted); border-left: 3px solid var(--line); padding-left: 10px; }
+
+.cta { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 14px; padding: 15px 18px; font-weight: 700; font-size: 1rem; width: 100%; }
+.btn { background: var(--surface2); color: var(--fg); border: 0; border-radius: 12px; padding: 11px 14px; font-weight: 600; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.danger { background: transparent; color: var(--danger); border: 1px solid currentColor; }
+.btn.wide { width: 100%; }
+.ghost { background: none; border: 0; color: var(--accent); font-weight: 700; padding: 8px 0; }
+.link-danger { background: none; border: 0; color: var(--danger); font-weight: 600; padding: 10px 0; align-self: center; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.row.between { justify-content: space-between; }
+
+label { font-size: .82rem; font-weight: 600; color: var(--muted); }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+input, select, textarea {
+  width: 100%; min-width: 0; background: var(--surface2); border: 1px solid transparent; border-radius: 12px; padding: 11px 12px; font-size: 16px;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); outline: none; background: var(--surface); }
+textarea { min-height: 70px; resize: vertical; }
+.fields2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fields3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+/* ---------- Hoje ---------- */
+.hello { padding-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+.hello h1 { font-size: 2.2rem; }
+.next { background: var(--fg); color: var(--bg); }
+.next .eyebrow, .next .muted { color: color-mix(in srgb, var(--bg) 70%, transparent); }
+.next h2 { font-size: 1.9rem; }
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+.week div { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: .72rem; color: var(--muted); font-weight: 600; }
+.week i { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-style: normal; }
+.week .done i { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.week .today { color: var(--fg); }
+.week .today i { border-color: var(--fg); }
+.kcal-trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.kcal-trio div { display: flex; flex-direction: column; gap: 2px; }
+.kcal-trio strong { font-family: var(--font-d); font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.bar { height: 8px; border-radius: 99px; background: var(--surface2); overflow: hidden; }
+.bar b { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+.bar.over b { background: var(--amber); }
+.tile-link { text-align: left; border: 0; font: inherit; color: inherit; }
+
+/* ---------- Fichas ---------- */
+.ficha { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; }
+.letter {
+  width: 52px; height: 52px; border-radius: 14px; background: var(--accent-soft); color: var(--accent);
+  font-family: var(--font-d); font-weight: 800; font-size: 1.7rem; display: grid; place-items: center;
+}
+.ficha .body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ficha .list { font-size: .88rem; color: var(--muted); }
+.ficha .row { margin-top: 6px; }
+.hist { display: flex; flex-direction: column; }
+.hist button { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 12px 0; }
+.hist button:last-child { border-bottom: 0; }
+.hist .sub { font-size: .84rem; color: var(--muted); grid-column: 1; }
+.hist .right { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; }
+
+/* ---------- Sessão de treino ---------- */
+.sess-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 8px; }
+.crono { font-family: var(--font-d); font-size: 1.5rem; font-variant-numeric: tabular-nums; font-weight: 700; }
+.ex h3 { font-size: 1.15rem; }
+.ex .meta { font-size: .84rem; color: var(--muted); }
+.series { display: flex; flex-direction: column; gap: 6px; }
+.serie { display: grid; grid-template-columns: 28px 1fr 1fr 48px; gap: 8px; align-items: center; }
+.serie .n { font-weight: 700; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
+.serie input { text-align: center; font-variant-numeric: tabular-nums; padding: 10px 6px; }
+.serie-h { display: grid; grid-template-columns: 28px 1fr 1fr 48px; gap: 8px; font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; text-align: center; }
+.ok-btn { height: 44px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); display: grid; place-items: center; }
+.ok-btn svg { width: 22px; height: 22px; stroke: var(--muted); fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.serie.ok .ok-btn { background: var(--teal); border-color: var(--teal); }
+.serie.ok .ok-btn svg { stroke: var(--surface); }
+.serie.ok input { background: var(--teal-soft); }
+.ex-actions { display: flex; justify-content: space-between; }
+.ex-actions button { background: none; border: 0; color: var(--muted); font-weight: 600; font-size: .86rem; padding: 4px 0; }
+
+/* ---------- Timer ---------- */
+.timer {
+  position: fixed; z-index: 24; left: 0; right: 0;
+  bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.timer .box {
+  max-width: 528px; margin: 0 auto; background: var(--fg); color: var(--bg); border-radius: 18px; padding: 12px 14px;
+  display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+.timer .t { display: flex; flex-direction: column; }
+.timer .t span { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; opacity: .7; font-weight: 700; }
+.timer .t strong { font-family: var(--font-d); font-size: 1.9rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.timer button { background: color-mix(in srgb, var(--bg) 16%, transparent); color: var(--bg); border: 0; border-radius: 10px; padding: 10px 12px; font-weight: 700; }
+.timer.done .box { background: var(--teal); color: var(--surface); }
+.timer.done button { color: var(--surface); }
+.timer .prog { grid-column: 1 / -1; height: 4px; border-radius: 9px; background: color-mix(in srgb, var(--bg) 18%, transparent); overflow: hidden; }
+.timer .prog b { display: block; height: 100%; background: var(--accent); width: 0; transition: width .25s linear; }
+
+/* ---------- Diário ---------- */
+.daynav { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; text-align: center; gap: 8px; }
+.daynav button { height: 44px; border-radius: 12px; border: 0; background: var(--surface); box-shadow: var(--shadow); font-size: 1.3rem; }
+.daynav button:disabled { opacity: .35; }
+.daynav strong { font-family: var(--font-d); font-size: 1.1rem; }
+.meal { display: flex; flex-direction: column; gap: 4px; }
+.meal h3 { font-size: .9rem; font-family: var(--font-b); font-weight: 700; display: flex; justify-content: space-between; }
+.meal h3 span { color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+.item { display: grid; grid-template-columns: 1fr auto 32px; gap: 8px; align-items: center; font-size: .93rem; padding: 4px 0; }
+.item .k { font-variant-numeric: tabular-nums; color: var(--muted); }
+.x { width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--surface2); color: var(--muted); font-size: 1rem; line-height: 1; }
+.addmeal { display: grid; grid-template-columns: 1fr 90px; gap: 8px; }
+.addmeal select { grid-column: 1 / -1; }
+.addmeal button { grid-column: 1 / -1; }
+
+/* ---------- Mounjaro ---------- */
+.mj-hero { background: var(--teal-soft); box-shadow: none; }
+.mj-hero .big { color: var(--teal); }
+.mj-hero.late { background: var(--amber-soft); }
+.mj-hero.late .big { color: var(--amber); }
+.mj-hero.today { background: var(--accent-soft); }
+.mj-hero.today .big { color: var(--accent); }
+.doses { display: flex; gap: 6px; flex-wrap: wrap; }
+.doses label { flex: 1 0 auto; }
+.doses input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.doses span { display: block; text-align: center; padding: 10px 6px; border-radius: 10px; background: var(--surface2); color: var(--fg); font-weight: 700; font-variant-numeric: tabular-nums; font-size: .9rem; min-width: 52px; }
+.doses input:checked + span { background: var(--accent); color: var(--accent-ink); }
+.doses input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- Charts ---------- */
+.chart { overflow-x: auto; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--muted); font-size: 10px; font-family: var(--font-b); font-variant-numeric: tabular-nums; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .line { fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.chart .line.teal { stroke: var(--teal); }
+.chart .area { fill: var(--accent); opacity: .1; }
+.chart .area.teal { fill: var(--teal); }
+.chart .dot { fill: var(--surface); stroke: var(--accent); stroke-width: 2.4; }
+.chart .dot.teal { stroke: var(--teal); }
+.chart .end { fill: var(--fg); font-weight: 700; font-size: 11px; }
+.chart .mk { fill: var(--teal); }
+.chart .barv { fill: var(--accent); }
+.chart .barg { fill: var(--teal); }
+.chart .meta-line { stroke: var(--amber); stroke-dasharray: 4 3; stroke-width: 1.4; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .78rem; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.stats3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stats3 div { display: flex; flex-direction: column; gap: 2px; }
+.stats3 strong { font-family: var(--font-d); font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+
+/* ---------- Sheet ---------- */
+.sheet { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; justify-content: flex-end; }
+.sheet-bg { position: absolute; inset: 0; background: rgba(20, 8, 18, .45); border: 0; }
+.sheet-card {
+  position: relative; background: var(--bg); border-radius: 22px 22px 0 0; max-height: 92vh; overflow-y: auto;
+  width: 100%; max-width: 600px; margin: 0 auto;
+  padding-top: 10px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(18px, env(safe-area-inset-left, 0px)); padding-right: max(18px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 14px;
+  animation: up .22s ease-out;
+}
+.sheet-x { position: absolute; top: 12px; right: max(14px, env(safe-area-inset-right, 0px)); width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--surface2); color: var(--muted); font-size: 1.3rem; line-height: 1; }
+.sheet-card > h2 { padding-right: 44px; }
+.sheet-card::before { content: ""; width: 40px; height: 5px; border-radius: 9px; background: var(--line); align-self: center; }
+@keyframes up { from { transform: translateY(30px); opacity: .6; } to { transform: none; opacity: 1; } }
+.ex-edit { background: var(--surface); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.ex-edit .top-row { display: grid; grid-template-columns: 1fr 36px; gap: 8px; }
+.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: .92rem; }
+.steps b { font-weight: 700; }
+.sheet .acct { display: flex; gap: 12px; align-items: center; }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed; z-index: 50; left: 50%; transform: translateX(-50%);
+  bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  background: var(--fg); color: var(--bg); padding: 11px 18px; border-radius: 999px; font-weight: 600; font-size: .92rem;
+  max-width: calc(100% - 32px); text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.2);
+}
+
+@media (max-width: 360px) {
+  .grid2 { grid-template-columns: 1fr; }
+  h1 { font-size: 1.6rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet-card { animation: none; }
+  .timer .prog b { transition: none; }
+}
+
+/* ---------- Busca de alimentos ---------- */
+.addfood { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.sugs { display: flex; flex-direction: column; }
+.sugs:empty { display: none; }
+.sugs button { display: flex; justify-content: space-between; gap: 10px; text-align: left; background: var(--surface2); border: 0; padding: 11px 12px; border-bottom: 1px solid var(--line); }
+.sugs button:first-child { border-radius: 12px 12px 0 0; }
+.sugs button:last-child { border-radius: 0 0 12px 12px; border-bottom: 0; }
+.sugs button:only-child { border-radius: 12px; }
+.sugs button .hint { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sugs .manual span:first-child { color: var(--accent); font-weight: 600; }
+.selbox { display: flex; flex-direction: column; gap: 10px; background: var(--accent-soft); border-radius: 14px; padding: 12px; }
+.selbox input, .selbox select { background: var(--surface); }
+.qtyrow { display: grid; grid-template-columns: 90px 1fr; gap: 8px; }
+.qtyrow input { text-align: center; font-variant-numeric: tabular-nums; font-weight: 700; }
+.kcalout { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; }
+.kcalout input { font-family: var(--font-d); font-size: 1.3rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
+.check { display: flex; gap: 8px; align-items: center; font-weight: 500; color: var(--fg); font-size: .9rem; }
+.check input { width: 20px; height: 20px; accent-color: var(--accent); }
+
+/* ---------- Importar ---------- */
+.visually-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.filebtn { text-align: center; display: block; color: var(--fg); font-size: 1rem; }
+.card.prev { gap: 4px; }
+#imp-prev { display: flex; flex-direction: column; gap: 10px; }
+
+/* ---------- Demonstrações ---------- */
+.demo { display: flex; flex-direction: column; gap: 8px; margin: -6px -6px 0; }
+.demo-svg { width: 100%; height: 150px; background: var(--surface2); border-radius: 14px; display: block; }
+.demo-svg .fig { fill: none; stroke: var(--fg); stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
+.demo-svg .fig.f2 { opacity: .4; }
+.demo-svg .cabeca { fill: var(--fg); }
+.demo-svg .chao { stroke: var(--line); stroke-width: 1.5; }
+.demo-svg .eq { stroke: var(--muted); stroke-width: 2.6; stroke-linecap: round; fill: none; }
+.demo-svg .eq.thin { stroke-width: 1.4; }
+.demo-svg .cabo { stroke: var(--muted); stroke-width: .9; stroke-dasharray: 2 2; }
+.demo-svg .peso { fill: var(--accent); }
+.demo-svg .peso-in { fill: var(--surface2); }
+.demo-svg .demo-lbl { fill: var(--muted); font-size: 8px; font-family: var(--font-b); font-weight: 600; }
+.dicas { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; font-size: .86rem; color: var(--muted); }
+.video { font-size: .86rem; font-weight: 700; color: var(--accent); text-decoration: none; align-self: flex-start; }
+.nodemo { background: var(--surface2); border-radius: 14px; padding: 12px; margin: 0; }
+.demo-toggle { align-self: flex-start; padding: 0; font-size: .9rem; }
+
+/* ---------- Strava e avisos ---------- */
+.chip.strava { background: var(--strava-soft); color: var(--strava); }
+.strava-btn { background: var(--strava); color: #fff; }
+.ativ { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 4px 0; }
+.ativ .chip { min-width: 84px; justify-content: center; margin-top: 2px; }
+.ativ div { min-width: 0; }
+.aviso { border: 2px solid var(--accent-soft); box-shadow: none; }
+.aviso.mj { border-color: var(--teal-soft); background: var(--teal-soft); gap: 4px; }
+.aviso.mj strong { color: var(--teal); font-family: var(--font-d); font-size: 1.15rem; }
+.peso-rapido { grid-template-columns: 1fr auto; }
+.peso-rapido input { font-family: var(--font-d); font-size: 1.3rem; }
+.btn:disabled { opacity: .45; }
+
+/* =====================================================================
+   Camada visual Apple — refinamentos de componentes (somente apresentação)
+   ===================================================================== */
+body { font-size: 17px; line-height: 1.47; letter-spacing: -0.012em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+h1, h2, h3 { letter-spacing: -0.022em; }
+h1 { font-size: 2.125rem; font-weight: 700; line-height: 1.12; }
+h2 { font-size: 1.375rem; font-weight: 600; }
+h3 { font-size: 1.0625rem; font-weight: 600; }
+.eyebrow { font-size: .8125rem; font-weight: 500; letter-spacing: .01em; text-transform: uppercase; color: var(--muted); }
+.sec { font-size: .8125rem; font-weight: 500; letter-spacing: .01em; padding: 12px 4px 0; }
+.hint, .empty { font-size: .875rem; }
+.big { font-weight: 600; letter-spacing: -0.025em; font-size: 2.25rem; }
+.kcal-trio strong, .stats3 strong { font-weight: 600; letter-spacing: -0.02em; }
+main { gap: 20px; }
+
+/* barra de título e tab bar translúcidas */
+.top { background: var(--glass); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); padding-block: 10px; }
+.brand { font-weight: 600; font-size: 1.0625rem; letter-spacing: -0.02em; }
+.brand span { color: var(--muted); font-style: normal; font-weight: 400; }
+.avatar { width: 34px; height: 34px; border: 0; background: var(--surface2); color: var(--accent); font-weight: 600; font-size: .95rem; }
+.tabs { background: var(--tabglass); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-top: .5px solid var(--line); padding-top: 4px; }
+.tabs button { font-size: .625rem; font-weight: 500; letter-spacing: .01em; gap: 3px; transition: color .2s var(--ease); }
+.tabs svg { width: 25px; height: 25px; stroke-width: 1.6; }
+
+/* cartões */
+.card { border-radius: var(--r); padding: 20px; box-shadow: var(--shadow); gap: 14px; }
+.demo-flag { background: var(--surface); color: var(--muted); border-radius: 14px; padding: 10px 14px; font-size: .8125rem; box-shadow: var(--shadow); }
+.next { background: var(--surface); color: var(--fg); }
+.next .eyebrow, .next .muted { color: var(--muted); }
+.next h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.025em; }
+.tile-link { transition: transform .25s var(--ease); }
+.tile-link:active { transform: scale(.985); }
+
+/* botões */
+.cta, .btn, .ghost, .x, .ok-btn, .sheet-x, .daynav button, .timer button, .sugs button, .hist button { transition: transform .15s var(--ease), background-color .2s var(--ease), opacity .2s; }
+.cta { border-radius: 14px; padding: 15px 20px; font-weight: 600; font-size: 1.0625rem; letter-spacing: -0.01em; }
+.cta:active, .btn:active { transform: scale(.97); opacity: .9; }
+.btn { background: var(--surface2); color: var(--accent); border-radius: 12px; padding: 11px 16px; font-weight: 500; font-size: .9375rem; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.danger { background: var(--danger-soft); color: var(--danger); border: 0; }
+.ghost { font-weight: 500; font-size: 1rem; }
+.ghost:active, .link-danger:active { opacity: .5; }
+.link-danger { font-weight: 500; }
+.strava-btn { background: var(--strava); color: #fff; }
+.btn-google { background: var(--fg); color: var(--bg); border-radius: 14px; font-weight: 600; font-size: 1.0625rem; padding: 16px 22px; }
+
+/* chips e badges */
+.chip { font-weight: 500; font-size: .75rem; padding: 3px 10px; }
+
+/* campos */
+label { font-size: .8125rem; font-weight: 500; }
+input, select, textarea { background: var(--surface2); border: 1px solid transparent; border-radius: 10px; padding: 12px 13px; transition: box-shadow .2s var(--ease), border-color .2s var(--ease), background-color .2s; }
+input:focus, select:focus, textarea:focus { background: var(--surface); border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+select { -webkit-appearance: none; appearance: none; padding-right: 36px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 18px) 52%, calc(100% - 13px) 52%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
+.check input { width: 22px; height: 22px; }
+
+/* Hoje */
+.hello { gap: 2px; padding-top: 14px; }
+.hello h1 { font-size: 2.125rem; }
+.week i { border-width: 1.5px; width: 30px; height: 30px; font-size: .8rem; }
+.week .done i { background: var(--accent); border-color: var(--accent); }
+.bar { height: 6px; }
+
+/* fichas e histórico */
+.letter { border-radius: 12px; font-weight: 600; font-size: 1.5rem; width: 48px; height: 48px; }
+.hist button { border-bottom: .5px solid var(--line); padding: 13px 0; }
+.hist button:active { opacity: .6; }
+.hist .right { font-weight: 600; }
+
+/* sessão de treino */
+.crono { font-weight: 600; font-size: 1.375rem; color: var(--muted); }
+.serie input { border-radius: 10px; font-weight: 500; }
+.ok-btn { border-radius: 999px; border: 1.5px solid var(--line); width: 44px; justify-self: center; }
+.ok-btn svg { stroke-width: 2.4; }
+.ok-btn:active { transform: scale(.9); }
+.serie.ok .ok-btn { background: var(--teal); border-color: var(--teal); }
+.ex-actions button { color: var(--accent); font-weight: 500; }
+
+/* timer: cápsula escura */
+.timer .box { border-radius: 24px; padding: 12px 14px 12px 20px; box-shadow: 0 12px 40px rgba(0, 0, 0, .22); }
+.timer .t span { font-weight: 500; letter-spacing: .04em; }
+.timer .t strong { font-weight: 600; letter-spacing: -0.02em; }
+.timer button { border-radius: 999px; padding: 9px 14px; font-weight: 600; }
+
+/* diário */
+.daynav button { border-radius: 999px; width: 44px; color: var(--accent); background: var(--surface); }
+.daynav strong { font-weight: 600; font-size: 1.0625rem; }
+.meal h3 { font-weight: 600; font-size: .9375rem; }
+.x { background: var(--surface2); font-size: .95rem; }
+.sugs button { background: var(--surface); border-bottom: .5px solid var(--line); padding: 12px 14px; }
+.sugs { border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 .5px var(--line), var(--shadow); }
+.sugs button:active { background: var(--surface2); }
+.selbox { border-radius: 16px; padding: 14px; }
+.kcalout input { font-weight: 600; }
+
+/* Mounjaro: dose como controle segmentado */
+.mj-hero { box-shadow: none; }
+.mj-hero .big { font-weight: 700; }
+.doses { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface2); padding: 3px; border-radius: 10px; gap: 2px; }
+.doses span { background: transparent; border-radius: 8px; font-weight: 500; padding: 8px 4px; transition: background-color .2s var(--ease), box-shadow .2s var(--ease); }
+.doses input:checked + span { background: var(--surface); color: var(--fg); font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); }
+
+/* gráficos */
+.chart .line { stroke-width: 2.2; }
+.chart .area { opacity: .08; }
+
+/* sheet (modal) */
+.sheet-bg { background: rgba(0, 0, 0, .32); }
+.sheet-card { border-radius: 14px 14px 0 0; gap: 16px; padding-top: 8px; animation: up .42s var(--ease); }
+.sheet-card::before { width: 36px; height: 5px; background: var(--line); }
+.sheet-x { width: 30px; height: 30px; font-size: 1.1rem; color: var(--muted); }
+@keyframes up { from { transform: translateY(40px); opacity: .4; } to { transform: none; opacity: 1; } }
+
+/* toast tipo HUD */
+.toast { border-radius: 14px; font-weight: 500; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: color-mix(in srgb, var(--fg) 88%, transparent); animation: hud .3s var(--ease); }
+@keyframes hud { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+/* login */
+.wordmark { font-weight: 700; letter-spacing: -0.035em; font-size: clamp(2.6rem, 13vw, 3.6rem); line-height: 1.02; }
+.wordmark span { color: var(--muted); font-style: normal; font-weight: 400; }
+.login .lead { font-size: 1.1875rem; line-height: 1.4; }
+.login .note { border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); }
+
+/* demonstrações, Strava e avisos */
+.demo-svg { border-radius: 16px; }
+.demo-svg .fig { stroke-width: 3; }
+.video { font-weight: 500; }
+.aviso { border: 0; box-shadow: var(--shadow); }
+.aviso.mj { box-shadow: none; }
+.aviso.mj strong { font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .toast, .sheet-card { animation: none; }
+  .cta:active, .btn:active, .tile-link:active, .ok-btn:active { transform: none; }
+}
+
+/* =====================================================================
+   Tema claro obrigatório — nenhuma superfície escura
+   ===================================================================== */
+input, select, textarea { background-color: var(--field); border: 1px solid var(--line); }
+input:focus, select:focus, textarea:focus { background-color: var(--field); }
+.selbox input, .selbox select, .serie input { background-color: var(--field); }
+.serie.ok input { background-color: var(--teal-soft); border-color: transparent; }
+.doses { border: 1px solid var(--line); }
+.btn-google { background: var(--surface); color: var(--fg); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.timer .box { background: var(--surface); color: var(--fg); border: 1px solid var(--line); box-shadow: 0 8px 30px rgba(0, 0, 0, .10); }
+.timer .t span { color: var(--muted); opacity: 1; }
+.timer button { background: var(--surface2); color: var(--accent); border: 1px solid var(--line); }
+.timer .prog { background: var(--surface2); }
+.timer.done .box { background: var(--teal-soft); color: var(--teal); border-color: var(--teal-soft); }
+.timer.done button { background: var(--surface); color: var(--teal); }
+.toast { background: rgba(255, 255, 255, .92); color: var(--fg); border: 1px solid var(--line); box-shadow: 0 8px 28px rgba(0, 0, 0, .12); }
+.sheet-bg { background: rgba(29, 29, 31, .18); }
+.sheet-card { background: var(--bg); }
+.hist button, .sugs button { border-bottom-color: var(--line); }
+.ex-edit { border: 1px solid var(--line); }
+
+/* ---------- Meta de calorias ---------- */
+.meta-res { display: grid; grid-template-columns: 1fr; gap: 12px; background: var(--accent-soft); border-radius: 16px; padding: 16px; }
+.meta-res > div:first-child { display: flex; flex-direction: column; gap: 2px; }
+.meta-res strong { font-size: 2rem; font-weight: 700; letter-spacing: -0.025em; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1.05; }
+.meta-res strong small { font-size: .9rem; font-weight: 500; color: var(--muted); }
+.meta-linhas { display: flex; flex-direction: column; gap: 4px; font-size: .8125rem; min-width: 0; }
+.meta-linhas p { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); }
+.meta-linhas b { color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.meta-linhas { border-top: 1px solid rgba(0, 113, 227, .15); padding-top: 10px; font-size: .875rem; }
+
+</style>
+</head>
+<body>
+<div id="boot" class="boot">Carregando…</div>
+
+<section id="login" class="login" hidden>
+  <div class="wordmark">Amandinha<span>Fitness</span></div>
+  <p class="lead">Treino, alimentação, peso e Mounjaro no mesmo lugar.</p>
+  <button id="btn-google" class="btn-google" data-a="loginGoogle" type="button">
+    <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6c4.5-4.2 6.9-10.3 6.9-17.7z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.2 1.5-5 2.3-8.2 2.3-6.2 0-11.5-4.1-13.4-9.9l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>
+    <span>Entrar com Google</span>
+  </button>
+  <p id="login-msg" class="note" hidden></p>
+</section>
+
+<div id="app" hidden>
+  <header class="top">
+    <div class="brand">Amandinha<span>Fitness</span></div>
+    <button id="avatar" class="avatar" data-a="perfil" type="button" aria-label="Ajustes e conta">A</button>
+  </header>
+  <main id="view"></main>
+  <div id="timer" class="timer" hidden>
+    <div class="box">
+      <div class="t"><span>Descanso</span><strong id="timer-txt">0:00</strong></div>
+      <button type="button" data-a="timerMais">+15s</button>
+      <button type="button" data-a="timerPular" id="timer-pular">Pular</button>
+      <div class="prog"><b id="timer-prog"></b></div>
+    </div>
+  </div>
+  <nav class="tabs" aria-label="Seções">
+    <button type="button" data-tab="hoje"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg>Hoje</button>
+    <button type="button" data-tab="treino"><svg viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/></svg>Treino</button>
+    <button type="button" data-tab="diario"><svg viewBox="0 0 24 24"><path d="M7 3v8a2 2 0 0 0 4 0V3M9 11v10"/><path d="M17 3c-2 2-2 6 0 8v10"/></svg>Diário</button>
+    <button type="button" data-tab="mounjaro"><svg viewBox="0 0 24 24"><path d="M14 4l6 6M17 7l-9 9-3 1 1-3 9-9"/><path d="M4 20l2-2"/></svg>Mounjaro</button>
+    <button type="button" data-tab="evolucao"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M5 15l4-4 3 3 7-7"/><path d="M15 7h4v4"/></svg>Evolução</button>
+  </nav>
+</div>
+
+<div id="sheet" class="sheet" hidden>
+  <button type="button" class="sheet-bg" data-a="fechar" aria-label="Fechar"></button>
+  <div class="sheet-card" role="dialog" aria-modal="true" id="sheet-body"></div>
+</div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+'use strict';
+/* =====================================================================
+   AMANDINHA FITNESS — configuração
+   Cole aqui os dados do seu projeto Firebase (veja o README).
+   Enquanto apiKey estiver vazio, o app roda em "modo demonstração",
+   salvando só neste aparelho.
+   ===================================================================== */
+const FIREBASE_CONFIG = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+// E-mails Google que podem entrar. Vazio = qualquer conta (cada uma vê só os próprios dados).
+const EMAILS_PERMITIDOS = [];
+// Nome do atalho no app Atalhos do iPhone que grava no Apple Saúde.
+const NOME_ATALHO = "Amandinha Saúde";
+// Endereço do servidor (Cloudflare Worker) que cuida do Strava e das notificações. Ex.: "https://amandinha-fitness.seu-usuario.workers.dev"
+const WORKER_URL = "";
+// Client ID do app criado em strava.com/settings/api (é público, pode ficar aqui).
+const STRAVA_CLIENT_ID = "";
+
+/* ---------------- utilidades ---------------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const novoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const localISO = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const hoje = () => localISO(new Date());
+const dt = (iso) => new Date(iso + 'T12:00:00');
+const addDias = (iso, n) => { const d = dt(iso); d.setDate(d.getDate() + n); return localISO(d); };
+const diasEntre = (a, b) => Math.round((dt(b) - dt(a)) / 864e5);
+const num = (v) => { const n = parseFloat(String(v ?? '').replace(',', '.')); return isFinite(n) ? n : null; };
+const fmt = (n, dec = 0) => n == null || !isFinite(n) ? '–' : Number(n).toLocaleString('pt-BR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+const fmt1 = (n) => n == null ? '–' : Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+const ddmm = (iso) => { const [, m, d] = iso.split('-'); return `${d}/${m}`; };
+const dataCurta = (iso) => dt(iso).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }).replace(/\./g, '');
+const dataLonga = (iso) => { const s = dt(iso).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); return s.charAt(0).toUpperCase() + s.slice(1); };
+const mmss = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+const lsGet = (k, def) => { try { const v = localStorage.getItem(k); return v == null ? def : JSON.parse(v); } catch (e) { return def; } };
+const lsSet = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+
+let toastT = null;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2800);
+}
+
+/* ---------------- dados ---------------- */
+const COLS = ['fichas', 'treinos', 'diario', 'mounjaro', 'config', 'alimentos', 'atividades'];
+const S = { fichas: [], treinos: [], diario: [], mounjaro: [], config: [], alimentos: [], atividades: [] };
+
+const store = {
+  mode: 'local', uid: 'demo', fs: null, user: null,
+  key(c) { return `af:${this.uid}:${c}`; },
+  ref(c) { return this.fs.collection('users').doc(this.uid).collection(c); },
+  async loadAll() {
+    for (const c of COLS) {
+      try {
+        if (this.mode === 'cloud') {
+          const snap = await this.ref(c).get();
+          S[c] = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        } else {
+          S[c] = Object.entries(lsGet(this.key(c), {})).map(([id, v]) => ({ ...v, id }));
+        }
+      } catch (e) { console.error(e); S[c] = []; }
+    }
+  },
+  put(c, item) {
+    item = JSON.parse(JSON.stringify(item));
+    const i = S[c].findIndex(x => x.id === item.id);
+    if (i >= 0) S[c][i] = item; else S[c].push(item);
+    const { id, ...data } = item;
+    if (this.mode === 'cloud') {
+      this.ref(c).doc(id).set(data).catch(e => { console.error(e); toast('Não consegui salvar na nuvem. Confira a internet.'); });
+    } else {
+      const o = lsGet(this.key(c), {}); o[id] = data;
+      if (!lsSet(this.key(c), o)) toast('Não consegui salvar neste aparelho.');
+    }
+    return item;
+  },
+  del(c, id) {
+    S[c] = S[c].filter(x => x.id !== id);
+    if (this.mode === 'cloud') {
+      this.ref(c).doc(id).delete().catch(e => { console.error(e); toast('Não consegui apagar na nuvem.'); });
+    } else {
+      const o = lsGet(this.key(c), {}); delete o[id]; lsSet(this.key(c), o);
+    }
+  }
+};
+
+const cfg = () => S.config.find(x => x.id === 'perfil') || { id: 'perfil' };
+const salvarCfg = (patch) => store.put('config', { ...cfg(), ...patch });
+
+const FICHAS_EXEMPLO = [
+  { nome: 'Treino A', foco: 'Inferiores', exercicios: [
+    ['Agachamento livre', 4, '10-12', 90], ['Leg press 45°', 4, '12', 90], ['Cadeira extensora', 3, '12-15', 60],
+    ['Mesa flexora', 3, '12', 60], ['Elevação pélvica', 4, '10-12', 90], ['Panturrilha em pé', 4, '15', 45]] },
+  { nome: 'Treino B', foco: 'Superiores', exercicios: [
+    ['Puxada frontal', 4, '10-12', 90], ['Supino reto com halteres', 3, '10-12', 90], ['Remada baixa', 3, '12', 60],
+    ['Desenvolvimento com halteres', 3, '10-12', 75], ['Elevação lateral', 3, '12-15', 45], ['Tríceps na polia', 3, '12', 45], ['Rosca direta', 3, '12', 45]] },
+  { nome: 'Treino C', foco: 'Glúteos e posterior', exercicios: [
+    ['Stiff', 4, '10', 90], ['Agachamento búlgaro', 3, '10 cada perna', 75], ['Cadeira abdutora', 3, '15', 45],
+    ['Glúteo no cabo', 3, '12', 45], ['Prancha', 3, '40s', 45]] }
+];
+function semear() {
+  if (S.fichas.length || cfg().semeado) return;
+  FICHAS_EXEMPLO.forEach((f, i) => store.put('fichas', {
+    id: novoId(), nome: f.nome, foco: f.foco, ordem: i, exemplo: true,
+    exercicios: f.exercicios.map(([nome, series, reps, descanso]) => ({ nome, series, reps, descanso }))
+  }));
+  salvarCfg({ semeado: true });
+  if (store.mode === 'local') semearDemo();
+}
+// Dados de exemplo, só no modo demonstração, para a prévia mostrar gráficos.
+function semearDemo() {
+  const hj = hoje(); let seed = 7;
+  const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  for (let i = 20; i >= 0; i--) {
+    const iso = addDias(hj, -i);
+    const d = { id: iso, gastas: Math.round(1900 + rnd() * 500) };
+    if (i % 2 === 0 || i < 3) d.peso = Math.round((74.6 - (20 - i) * 0.13 + (rnd() - 0.5) * 0.5) * 10) / 10;
+    if (i < 14) d.refeicoes = [
+      { tipo: 'Café da manhã', desc: 'Iogurte natural com granola', kcal: Math.round(260 + rnd() * 80) },
+      { tipo: 'Almoço', desc: 'Arroz, feijão, frango grelhado e salada', kcal: Math.round(520 + rnd() * 120) },
+      { tipo: 'Lanche da tarde', desc: 'Whey com banana', kcal: Math.round(220 + rnd() * 60) },
+      ...(i === 0 ? [] : [{ tipo: 'Jantar', desc: 'Omelete com legumes', kcal: Math.round(380 + rnd() * 100) }])
+    ];
+    store.put('diario', d);
+  }
+  [[-20, 2.5, 0], [-13, 2.5, 1], [-6, 5, 2]].forEach(([n, dose, l]) =>
+    store.put('mounjaro', { id: novoId(), data: addDias(hj, n), dose, local: LOCAIS[l], obs: n === -6 ? 'Um pouco de enjoo no primeiro dia' : '' }));
+  const fs = fichasOrd(); let k = 0;
+  for (let i = 19; i >= 1; i -= 2) {
+    const f = fs[k % fs.length]; const prog = Math.floor(k / 3); k++;
+    const data = addDias(hj, -i);
+    store.put('treinos', {
+      id: novoId(), fichaId: f.id, fichaNome: f.nome, inicio: data + 'T18:30:00', fim: data + 'T19:25:00', data,
+      duracaoMin: 55, calorias: Math.round(280 + rnd() * 80), fcMedia: Math.round(118 + rnd() * 15), obs: '',
+      exercicios: f.exercicios.map((e, j) => {
+        const base = [30, 80, 25, 20, 40, 20, 12][j] || 15;
+        return { nome: e.nome, series: Array.from({ length: e.series }, () => ({ carga: base + prog * 2.5, reps: 12, feito: true })) };
+      })
+    });
+  }
+  salvarCfg({ semeado: true, metaPeso: '68', nome: 'Amandinha', sexo: 'f', nascimento: '1992-03-15', altura: '165', atividade: '1.375', ritmo: '500' });
+}
+
+/* ---------------- consultas ---------------- */
+const fichasOrd = () => [...S.fichas].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0) || a.nome.localeCompare(b.nome));
+const treinosOrd = () => [...S.treinos].sort((a, b) => b.inicio.localeCompare(a.inicio));
+const diaDe = (iso) => S.diario.find(x => x.id === iso);
+function diaInfo(iso) {
+  const d = diaDe(iso) || { id: iso };
+  const consumidas = (d.refeicoes || []).reduce((s, r) => s + (num(r.kcal) || 0), 0);
+  return { ...d, consumidas, gastas: num(d.gastas) || 0, peso: num(d.peso) };
+}
+const pesos = () => S.diario.filter(d => num(d.peso)).map(d => ({ data: d.id, peso: num(d.peso) })).sort((a, b) => a.data.localeCompare(b.data));
+const aplicacoes = () => [...S.mounjaro].sort((a, b) => b.data.localeCompare(a.data));
+function proximaAplicacao() {
+  const u = aplicacoes()[0]; if (!u) return null;
+  const data = addDias(u.data, 7);
+  return { data, diff: diasEntre(hoje(), data), dose: u.dose, local: u.local };
+}
+const mjRel = (diff) => diff > 1 ? `em ${diff} dias` : diff === 1 ? 'amanhã' : diff === 0 ? 'hoje' : `atrasada ${-diff} dia${diff < -1 ? 's' : ''}`;
+function proximaFicha() {
+  const f = fichasOrd(); if (!f.length) return null;
+  const ult = treinosOrd()[0]; if (!ult) return f[0];
+  const i = f.findIndex(x => x.id === ult.fichaId);
+  return f[(i + 1) % f.length];
+}
+const volume = (t) => t.exercicios.reduce((s, e) => s + e.series.filter(x => x.feito).reduce((a, x) => a + (num(x.carga) || 0) * (num(x.reps) || 0), 0), 0);
+function ultimoDoExercicio(nome) {
+  const n = nome.trim().toLowerCase();
+  for (const t of treinosOrd()) {
+    const e = t.exercicios.find(x => x.nome.trim().toLowerCase() === n);
+    if (e && e.series.some(s => s.feito)) return { ...e, series: e.series.filter(s => s.feito) };
+  }
+  return null;
+}
+const LOCAIS = ['Abdômen · esquerda', 'Abdômen · direita', 'Coxa · esquerda', 'Coxa · direita', 'Braço · esquerdo', 'Braço · direito'];
+const DOSES = [2.5, 5, 7.5, 10, 12.5, 15];
+const TIPOS = ['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia'];
+function tipoPorHora() {
+  const h = new Date().getHours();
+  return h < 10 ? TIPOS[0] : h < 12 ? TIPOS[1] : h < 15 ? TIPOS[2] : h < 18 ? TIPOS[3] : h < 21 ? TIPOS[4] : TIPOS[5];
+}
+function primeiroNome() {
+  const n = cfg().nome || store.user?.displayName || 'Amandinha';
+  return n.split(' ')[0];
+}
+
+/* ---------------- gráficos ---------------- */
+function lineChart(pts, o = {}) {
+  if (pts.length < 2) return `<p class="empty">${o.vazio || 'Registre pelo menos dois dias para ver o gráfico.'}</p>`;
+  const W = 340, H = 170, L = 38, R = 14, T = 16, B = 26, cls = o.teal ? ' teal' : '';
+  const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  let y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const pad = (y1 - y0) * 0.18 || Math.max(1, y1 * 0.05); y0 -= pad; y1 += pad;
+  const sx = x => L + (x - x0) / ((x1 - x0) || 1) * (W - L - R);
+  const sy = y => T + (1 - (y - y0) / (y1 - y0)) * (H - T - B);
+  let g = '';
+  [0.15, 0.5, 0.85].forEach(k => {
+    const v = y0 + (y1 - y0) * k, y = sy(v);
+    g += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/><text x="${L - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${fmt1(v)}</text>`;
+  });
+  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join('');
+  const area = `${d}L${sx(x1).toFixed(1)},${H - B}L${sx(x0).toFixed(1)},${H - B}Z`;
+  const last = pts[pts.length - 1];
+  let mk = '';
+  (o.markers || []).forEach(m => { if (m >= x0 && m <= x1) { const x = sx(m); mk += `<path class="mk" d="M${(x - 4).toFixed(1)},${H - B + 1}L${(x + 4).toFixed(1)},${H - B + 1}L${x.toFixed(1)},${H - B - 6}Z"/>`; } });
+  const lx = sx(last.x), ly = sy(last.y);
+  const anchor = lx > W - 60 ? 'end' : 'middle';
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.label || 'Gráfico')}">
+    ${g}<path class="area${cls}" d="${area}"/><path class="line${cls}" d="${d}"/>${mk}
+    <circle class="dot${cls}" cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="4.5"/>
+    <text class="end" x="${(anchor === 'end' ? lx : lx).toFixed(1)}" y="${(ly - 10).toFixed(1)}" text-anchor="${anchor}">${fmt1(last.y)}${o.unit ? ' ' + o.unit : ''}</text>
+    <text x="${L}" y="${H - 6}">${o.xfmt ? o.xfmt(x0) : ''}</text>
+    <text x="${W - R}" y="${H - 6}" text-anchor="end">${o.xfmt ? o.xfmt(x1) : ''}</text>
+  </svg></div>`;
+}
+function barChart(days, meta) {
+  const W = 340, H = 160, L = 34, R = 8, T = 12, B = 22;
+  const max = Math.max(meta || 0, ...days.map(d => Math.max(d.c, d.g)), 100) * 1.1;
+  const sy = v => T + (1 - v / max) * (H - T - B);
+  const bw = (W - L - R) / days.length;
+  let s = '';
+  [0.5, 1].forEach(k => { const v = Math.round(max * k / 1.1 / 100) * 100; const y = sy(v); s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/><text x="${L - 5}" y="${(y + 3).toFixed(1)}" text-anchor="end">${fmt(v)}</text>`; });
+  days.forEach((d, i) => {
+    const x = L + i * bw, w = Math.max(3, bw / 2 - 2);
+    if (d.c) s += `<rect class="barv" x="${(x + 1).toFixed(1)}" y="${sy(d.c).toFixed(1)}" width="${w.toFixed(1)}" height="${(H - B - sy(d.c)).toFixed(1)}" rx="2"/>`;
+    if (d.g) s += `<rect class="barg" x="${(x + 1 + w + 1).toFixed(1)}" y="${sy(d.g).toFixed(1)}" width="${w.toFixed(1)}" height="${(H - B - sy(d.g)).toFixed(1)}" rx="2"/>`;
+    if (i % 2 === (days.length - 1) % 2) s += `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle">${d.label}</text>`;
+  });
+  if (meta) { const y = sy(meta); s += `<line class="meta-line" x1="${L}" x2="${W - R}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/>`; }
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Calorias por dia">${s}</svg></div>`;
+}
+
+/* ---------------- estado de tela ---------------- */
+let aba = 'hoje';
+let diaSel = hoje();
+let exSel = '';
+let sessao = null;
+let fichaEdit = null;
+const sessKey = () => `af:${store.uid}:sessao`;
+const salvarSessao = () => lsSet(sessKey(), sessao);
+
+function render(trocouAba) {
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === aba ? 'page' : 'false'));
+  const v = $('#view');
+  const demo = store.mode === 'local' ? `<p class="demo-flag">Modo demonstração, com dados de exemplo. Tudo fica salvo só neste aparelho.</p>` : '';
+  v.innerHTML = demo + VIEWS[aba]();
+  v.classList.toggle('has-timer', !$('#timer').hidden);
+  if (trocouAba) window.scrollTo(0, 0);
+}
+
+/* ---------------- telas ---------------- */
+const VIEWS = {
+  hoje() {
+    const p = cfg();
+    const ps = pesos(), ult = ps[ps.length - 1], ini = ps[0];
+    const d = diaInfo(hoje());
+    const prox = proximaFicha();
+    const mj = proximaAplicacao();
+    const meta = metaDiaria();
+    let delta = '';
+    if (ult && ini && ult.data !== ini.data) {
+      const dv = ult.peso - ini.peso;
+      delta = `<p class="hint"><span class="delta ${dv <= 0 ? 'down' : 'up'}">${dv > 0 ? '+' : ''}${fmt1(dv)} kg</span> desde ${ddmm(ini.data)}</p>`;
+    }
+    // semana (segunda a domingo)
+    const hj = hoje(); const dow = (dt(hj).getDay() + 6) % 7; const seg = addDias(hj, -dow);
+    const feitos = new Set(S.treinos.map(t => t.data));
+    const letras = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+    const semana = letras.map((l, i) => { const iso = addDias(seg, i); return `<div class="${feitos.has(iso) ? 'done' : ''} ${iso === hj ? 'today' : ''}"><i>${feitos.has(iso) ? '✓' : ''}</i>${l}</div>`; }).join('');
+    const nSemana = letras.filter((_, i) => feitos.has(addDias(seg, i))).length;
+
+    let treinoCard = '';
+    if (sessao) {
+      treinoCard = `<div class="card next"><p class="eyebrow">Treino em andamento</p><h2>${esc(sessao.fichaNome)}</h2><button class="cta" data-a="irTreino" type="button">Continuar treino</button></div>`;
+    } else if (prox) {
+      treinoCard = `<div class="card next"><p class="eyebrow">Próximo treino</p><h2>${esc(prox.nome)}</h2>
+        <p class="muted">${esc(prox.foco || '')}${prox.foco ? ' · ' : ''}${prox.exercicios.length} exercícios</p>
+        <button class="cta" data-a="iniciar" data-id="${prox.id}" type="button">Começar ${esc(prox.nome)}</button></div>`;
+    }
+    const pct = meta ? Math.min(100, d.consumidas / meta * 100) : 0;
+    return `
+      <section class="hello"><p class="eyebrow">${dataLonga(hj)}</p><h1>Oi, ${esc(primeiroNome())}</h1></section>
+      ${avisosHoje()}
+      ${treinoCard}
+      <div class="grid2">
+        <button class="card tile-link" data-a="irAba" data-tab="diario" type="button">
+          <p class="eyebrow">Peso</p>
+          <div class="big">${ult ? fmt1(ult.peso) : '–'}<small>kg</small></div>
+          ${delta || `<p class="hint">${ult ? 'em ' + ddmm(ult.data) : 'Registre no Diário'}</p>`}
+        </button>
+        <button class="card tile-link" data-a="irAba" data-tab="mounjaro" type="button">
+          <p class="eyebrow">Mounjaro</p>
+          ${mj ? `<div class="big">${dt(mj.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</div>
+          <p class="hint"><span class="chip ${mj.diff < 0 ? 'amber' : mj.diff === 0 ? 'pink' : 'teal'}">${mjRel(mj.diff)}</span> ${fmt1(mj.dose)} mg</p>`
+          : `<div class="big">–</div><p class="hint">Registre a 1ª aplicação</p>`}
+        </button>
+      </div>
+      <button class="card tile-link" data-a="irAba" data-tab="diario" type="button">
+        <div class="row between"><p class="eyebrow">Calorias de hoje</p>${meta ? `<span class="chip">meta ${fmt(meta)} kcal</span>` : ''}</div>
+        <div class="kcal-trio">
+          <div><span class="hint">Consumidas</span><strong>${fmt(d.consumidas)}</strong></div>
+          <div><span class="hint">Gastas</span><strong>${fmt(d.gastas)}</strong></div>
+          <div><span class="hint">Saldo</span><strong>${fmt(d.consumidas - d.gastas)}</strong></div>
+        </div>
+        ${meta ? `<div class="bar ${d.consumidas > meta ? 'over' : ''}"><b style="width:${pct.toFixed(0)}%"></b></div>` : ''}
+      </button>
+      <div class="card">
+        <div class="row between"><p class="eyebrow">Esta semana</p><span class="chip pink">${nSemana} treino${nSemana === 1 ? '' : 's'}</span></div>
+        <div class="week">${semana}</div>
+      </div>
+      ${stravaHoje()}`;
+  },
+
+  treino() {
+    if (sessao) return viewSessao();
+    const fichas = fichasOrd();
+    const hist = treinosOrd().slice(0, 25);
+    const cards = fichas.map((f, i) => {
+      const letra = (f.nome.match(/\b([A-Z])$/) || [])[1] || String.fromCharCode(65 + i);
+      return `<div class="card ficha">
+        <div class="letter">${esc(letra)}</div>
+        <div class="body">
+          <div class="row between"><h3>${esc(f.nome)}</h3>${f.exemplo ? '<span class="chip amber">exemplo</span>' : ''}</div>
+          ${f.foco ? `<p class="hint">${esc(f.foco)}</p>` : ''}
+          <p class="list">${f.exercicios.map(e => esc(e.nome)).join(' · ') || 'Sem exercícios'}</p>
+          <div class="row"><button class="btn primary" data-a="iniciar" data-id="${f.id}" type="button">Começar</button><button class="btn" data-a="editarFicha" data-id="${f.id}" type="button">Editar</button></div>
+        </div></div>`;
+    }).join('');
+    const h = hist.map(t => `<button data-a="verTreino" data-id="${t.id}" type="button">
+        <strong>${esc(t.fichaNome)}</strong>
+        <span class="right">${fmt(volume(t))} kg</span>
+        <span class="sub">${dataCurta(t.data)} · ${t.duracaoMin || '–'} min${t.calorias ? ' · ' + fmt(t.calorias) + ' kcal' : ''}</span>
+      </button>`).join('');
+    return `
+      <section class="head"><h1>Treino</h1><div class="row"><button class="ghost" data-a="abrirImport" type="button">Importar</button><button class="ghost" data-a="editarFicha" type="button">+ Nova ficha</button></div></section>
+      ${fichas.some(f => f.exemplo) ? '<p class="hint">As fichas marcadas como exemplo são um ponto de partida. Edite com o treino real dela.</p>' : ''}
+      ${cards || '<p class="empty">Nenhuma ficha ainda. Toque em “+ Nova ficha”.</p>'}
+      ${stravaSecao()}
+      <h2 class="sec">Histórico</h2>
+      <div class="card hist">${h || '<p class="empty">Os treinos finalizados aparecem aqui.</p>'}</div>`;
+  },
+
+  diario() {
+    const d = diaInfo(diaSel);
+    const meta = metaDiaria();
+    const grupos = TIPOS.map(tipo => {
+      const itens = (d.refeicoes || []).map((r, i) => ({ ...r, i })).filter(r => r.tipo === tipo);
+      if (!itens.length) return '';
+      const tot = itens.reduce((s, r) => s + (num(r.kcal) || 0), 0);
+      return `<div class="meal"><h3>${tipo}<span>${fmt(tot)} kcal</span></h3>
+        ${itens.map(r => `<div class="item"><span>${esc(r.desc)}</span><span class="k">${fmt(num(r.kcal))}</span><button class="x" data-a="delRefeicao" data-i="${r.i}" type="button" aria-label="Remover ${esc(r.desc)}">×</button></div>`).join('')}
+      </div>`;
+    }).join('');
+    const pct = meta ? Math.min(100, d.consumidas / meta * 100) : 0;
+    return `
+      <section class="head"><h1>Diário</h1></section>
+      <div class="daynav">
+        <button data-a="diaPrev" type="button" aria-label="Dia anterior">‹</button>
+        <strong>${diaSel === hoje() ? 'Hoje' : dataCurta(diaSel)}</strong>
+        <button data-a="diaNext" type="button" aria-label="Próximo dia" ${diaSel >= hoje() ? 'disabled' : ''}>›</button>
+      </div>
+      <div class="card">
+        <div class="fields2">
+          <div class="field"><label for="d-peso">Peso (kg)</label><input id="d-peso" inputmode="decimal" placeholder="ex.: 68,4" data-f="peso" value="${d.peso != null ? fmt1(d.peso) : ''}"></div>
+          <div class="field"><label for="d-gastas">Calorias gastas</label><input id="d-gastas" inputmode="numeric" placeholder="kcal" data-f="gastas" value="${d.gastas || ''}"></div>
+        </div>
+        <p class="hint">Calorias gastas: use o total do dia no Garmin Connect.</p>
+        ${stravaDia(diaSel)}
+      </div>
+      <div class="card">
+        <div class="kcal-trio">
+          <div><span class="hint">Consumidas</span><strong>${fmt(d.consumidas)}</strong></div>
+          <div><span class="hint">Gastas</span><strong>${fmt(d.gastas)}</strong></div>
+          <div><span class="hint">Saldo</span><strong>${fmt(d.consumidas - d.gastas)}</strong></div>
+        </div>
+        ${meta ? `<div class="bar ${d.consumidas > meta ? 'over' : ''}"><b style="width:${pct.toFixed(0)}%"></b></div><p class="hint">${fmt(d.consumidas)} de ${fmt(meta)} kcal da meta</p>` : '<p class="hint">Complete altura, nascimento e peso nos ajustes (toque no A lá em cima) para o app calcular sua meta.</p>'}
+      </div>
+      <h2 class="sec">Alimentação</h2>
+      <div class="card">
+        ${grupos || '<p class="empty">Nada registrado neste dia.</p>'}
+        ${painelAlimento()}
+      </div>
+      <button class="btn wide" data-a="enviarSaude" type="button">Enviar peso e calorias ao Apple Saúde</button>`;
+  },
+
+  mounjaro() {
+    const ap = aplicacoes();
+    const mj = proximaAplicacao();
+    const u = ap[0];
+    const sugLocal = u ? LOCAIS[(LOCAIS.indexOf(u.local) + 1) % LOCAIS.length] : LOCAIS[0];
+    const doseAtual = u ? u.dose : 2.5;
+    const hero = mj ? `<div class="card mj-hero ${mj.diff < 0 ? 'late' : mj.diff === 0 ? 'today' : ''}">
+        <p class="eyebrow">Próxima aplicação</p>
+        <div class="big">${esc(dataCurta(mj.data))}</div>
+        <p><strong>${mjRel(mj.diff).replace(/^./, c => c.toUpperCase())}</strong> · última: ${fmt1(mj.dose)} mg em ${ddmm(u.data)}</p>
+        <p class="hint">Sugestão de local: ${esc(sugLocal)}</p>
+      </div>` : `<div class="card mj-hero"><p class="eyebrow">Mounjaro</p><h2>Registre a primeira aplicação</h2><p class="hint">O app calcula a próxima data (7 dias depois) e sugere o rodízio do local.</p></div>`;
+    const hist = ap.slice(0, 30).map(a => `<div class="item"><span><strong class="num">${fmt1(a.dose)} mg</strong> · ${dataCurta(a.data)}<br><span class="hint">${esc(a.local)}${a.obs ? ' · ' + esc(a.obs) : ''}</span></span><span></span><button class="x" data-a="delAplicacao" data-id="${a.id}" type="button" aria-label="Apagar aplicação de ${ddmm(a.data)}">×</button></div>`).join('');
+    const dosePts = [...ap].reverse().map(a => ({ x: +dt(a.data), y: a.dose }));
+    return `
+      <section class="head"><h1>Mounjaro</h1></section>
+      ${hero}
+      <form class="card" data-form="aplicacao">
+        <h3>Registrar aplicação</h3>
+        <div class="field"><label for="m-data">Data</label><input id="m-data" type="date" value="${hoje()}" max="${hoje()}"></div>
+        <div class="field"><label>Dose</label>
+          <div class="doses">${DOSES.map(d => `<label><input type="radio" name="m-dose" value="${d}" ${d === doseAtual ? 'checked' : ''}><span>${fmt1(d)} mg</span></label>`).join('')}</div>
+        </div>
+        <div class="field"><label for="m-local">Local</label><select id="m-local">${LOCAIS.map(l => `<option ${l === sugLocal ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        <div class="field"><label for="m-obs">Como se sentiu? (opcional)</label><input id="m-obs" placeholder="ex.: enjoo leve, pouca fome" autocomplete="off"></div>
+        <button class="btn primary" type="submit">Salvar aplicação</button>
+      </form>
+      ${dosePts.length >= 2 ? `<div class="card"><p class="eyebrow">Dose ao longo do tempo</p>${lineChart(dosePts, { unit: 'mg', teal: true, label: 'Dose de Mounjaro', xfmt: x => ddmm(localISO(new Date(x))) })}</div>` : ''}
+      <h2 class="sec">Histórico</h2>
+      <div class="card">${hist || '<p class="empty">Nenhuma aplicação registrada.</p>'}</div>
+      <p class="disclaimer">Registro pessoal. Dose, aumento de dose e local seguem sempre a orientação do médico.</p>`;
+  },
+
+  evolucao() {
+    const ps = pesos().slice(-120);
+    const marcas = S.mounjaro.map(a => +dt(a.data));
+    const pPts = ps.map(p => ({ x: +dt(p.data), y: p.peso }));
+    const ini = ps[0], ult = ps[ps.length - 1];
+    const tr = treinosOrd();
+    const lim30 = addDias(hoje(), -29), lim7 = addDias(hoje(), -6);
+    const t30 = tr.filter(t => t.data >= lim30);
+    const vol7 = tr.filter(t => t.data >= lim7).reduce((s, t) => s + volume(t), 0);
+    const nomes = [...new Set(tr.flatMap(t => t.exercicios.filter(e => e.series.some(s => s.feito)).map(e => e.nome)))].sort();
+    if (!nomes.includes(exSel)) exSel = nomes[0] || '';
+    const exPts = [...tr].reverse().map(t => {
+      const e = t.exercicios.find(x => x.nome === exSel); if (!e) return null;
+      const m = Math.max(0, ...e.series.filter(s => s.feito).map(s => num(s.carga) || 0));
+      return m ? { x: +dt(t.data) + (new Date(t.inicio).getHours() * 36e5), y: m } : null;
+    }).filter(Boolean);
+    const dias = Array.from({ length: 14 }, (_, i) => { const iso = addDias(hoje(), i - 13); const d = diaInfo(iso); return { label: dt(iso).getDate(), c: d.consumidas, g: d.gastas }; });
+    const meta = metaDiaria();
+    const metaPeso = num(cfg().metaPeso);
+    return `
+      <section class="head"><h1>Evolução</h1></section>
+      <div class="card">
+        <div class="row between"><p class="eyebrow">Peso</p>${metaPeso ? `<span class="chip">meta ${fmt1(metaPeso)} kg</span>` : ''}</div>
+        ${ps.length >= 2 ? `<div class="stats3">
+          <div><span class="hint">Início</span><strong>${fmt1(ini.peso)}</strong></div>
+          <div><span class="hint">Atual</span><strong>${fmt1(ult.peso)}</strong></div>
+          <div><span class="hint">Variação</span><strong class="delta ${ult.peso - ini.peso <= 0 ? 'down' : 'up'}">${ult.peso - ini.peso > 0 ? '+' : ''}${fmt1(ult.peso - ini.peso)}</strong></div>
+        </div>` : ''}
+        ${lineChart(pPts, { unit: 'kg', markers: marcas, label: 'Peso ao longo do tempo', xfmt: x => ddmm(localISO(new Date(x))), vazio: 'Registre o peso no Diário em pelo menos dois dias para ver a curva.' })}
+        ${ps.length >= 2 && marcas.length ? '<div class="legend"><span><i style="background:var(--teal)"></i>aplicação de Mounjaro</span></div>' : ''}
+      </div>
+      <div class="card">
+        <p class="eyebrow">Treinos</p>
+        <div class="stats3">
+          <div><span class="hint">Últimos 30 dias</span><strong>${t30.length}</strong></div>
+          <div><span class="hint">Média/semana</span><strong>${fmt1(t30.length / 30 * 7)}</strong></div>
+          <div><span class="hint">Volume 7 dias</span><strong>${fmt(vol7 / 1000, 1)} t</strong></div>
+        </div>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Carga máxima por exercício</p>
+        ${nomes.length ? `<select id="ex-sel" aria-label="Exercício">${nomes.map(n => `<option ${n === exSel ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>
+        ${lineChart(exPts, { unit: 'kg', label: 'Carga máxima de ' + exSel, xfmt: x => ddmm(localISO(new Date(x))), vazio: 'Faça esse exercício em pelo menos dois treinos para ver a evolução.' })}`
+        : '<p class="empty">Finalize alguns treinos para acompanhar a evolução de carga.</p>'}
+      </div>
+      <div class="card">
+        <p class="eyebrow">Calorias · últimos 14 dias</p>
+        ${dias.some(d => d.c || d.g) ? barChart(dias, meta) : '<p class="empty">Registre a alimentação no Diário para ver este gráfico.</p>'}
+        <div class="legend"><span><i style="background:var(--accent)"></i>consumidas</span><span><i style="background:var(--teal)"></i>gastas</span>${meta ? '<span><i style="background:var(--amber)"></i>meta</span>' : ''}</div>
+      </div>`;
+  }
+};
+
+function viewSessao() {
+  const s = sessao;
+  const exs = s.exercicios.map((e, ei) => `
+    <div class="card ex">
+      ${mostrarDemos() ? demoHTML(e.nome) : ''}
+      <div><h3>${esc(e.nome)}</h3><p class="meta">${e.series.length} séries · ${esc(e.reps || '')} reps · descanso ${e.descanso}s</p>
+      ${e.ultima ? `<p class="meta">${esc(e.ultima)}</p>` : ''}</div>
+      <div class="series">
+        <div class="serie-h"><span>#</span><span>kg</span><span>reps</span><span></span></div>
+        ${e.series.map((sr, si) => `<div class="serie ${sr.feito ? 'ok' : ''}">
+          <span class="n">${si + 1}</span>
+          <input inputmode="decimal" aria-label="Carga série ${si + 1}" data-sf="carga" data-e="${ei}" data-s="${si}" value="${esc(sr.carga)}">
+          <input inputmode="numeric" aria-label="Repetições série ${si + 1}" data-sf="reps" data-e="${ei}" data-s="${si}" value="${esc(sr.reps)}">
+          <button class="ok-btn" data-a="serieOk" data-e="${ei}" data-s="${si}" type="button" aria-label="Marcar série ${si + 1} como feita"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
+        </div>`).join('')}
+      </div>
+      <div class="ex-actions"><button data-a="addSerie" data-e="${ei}" type="button">+ Série</button>${e.series.length > 1 ? `<button data-a="remSerie" data-e="${ei}" type="button">− Série</button>` : ''}</div>
+    </div>`).join('');
+  return `
+    <div class="sess-head"><div><p class="eyebrow">Treinando</p><h1>${esc(s.fichaNome)}</h1></div><span class="crono" id="crono">${mmss(Math.floor((Date.now() - new Date(s.inicio)) / 1000))}</span></div>
+    <button class="ghost demo-toggle" data-a="toggleDemos" type="button">${mostrarDemos() ? 'Ocultar demonstrações' : 'Mostrar demonstrações'}</button>
+    ${exs}
+    <button class="cta" data-a="finalizar" type="button">Finalizar treino</button>
+    <button class="link-danger" data-a="cancelarTreino" type="button">Descartar treino</button>`;
+}
+
+/* ---------------- sessão de treino ---------------- */
+function iniciar(fid) {
+  if (sessao) { aba = 'treino'; render(true); return; }
+  const f = S.fichas.find(x => x.id === fid); if (!f) return;
+  sessao = {
+    fichaId: f.id, fichaNome: f.nome, inicio: new Date().toISOString(),
+    exercicios: f.exercicios.filter(e => e.nome.trim()).map(e => {
+      const ult = ultimoDoExercicio(e.nome);
+      const n = Math.max(1, num(e.series) || 3);
+      const repsPadrao = (String(e.reps || '').match(/\d+/) || [''])[0];
+      return {
+        nome: e.nome, reps: e.reps, descanso: num(e.descanso) || 60,
+        ultima: ult ? resumoSeries(ult.series) : '',
+        series: Array.from({ length: n }, (_, i) => ({
+          carga: ult ? String((ult.series[i] || ult.series[ult.series.length - 1]).carga).replace('.', ',') : '',
+          reps: ult ? (ult.series[i] || ult.series[ult.series.length - 1]).reps : repsPadrao,
+          feito: false
+        }))
+      };
+    })
+  };
+  salvarSessao(); aba = 'treino'; render(true); pedirWakeLock();
+}
+
+function resumoSeries(ss) {
+  const igual = ss.every(x => x.carga === ss[0].carga && x.reps === ss[0].reps);
+  return 'Última vez: ' + (igual ? `${ss.length}×${ss[0].reps} com ${fmt1(num(ss[0].carga) || 0)} kg` : ss.map(x => `${fmt1(num(x.carga) || 0)}kg×${x.reps}`).join(' · '));
+}
+let wl = null;
+async function pedirWakeLock() { try { if (navigator.wakeLock) wl = await navigator.wakeLock.request('screen'); } catch (e) { /* ok */ } }
+function soltarWakeLock() { try { wl && wl.release(); } catch (e) { } wl = null; }
+document.addEventListener('visibilitychange', () => { if (sessao && document.visibilityState === 'visible') pedirWakeLock(); });
+
+/* timer de descanso */
+let timerEnd = 0, timerTotal = 0, timerInt = null, actx = null;
+function destravarAudio() {
+  try {
+    if (!actx) { const C = window.AudioContext || window.webkitAudioContext; if (C) actx = new C(); }
+    if (actx && actx.state === 'suspended') actx.resume();
+  } catch (e) { }
+}
+function bip() {
+  if (!actx) return;
+  try {
+    [0, 0.28, 0.56].forEach(t => {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(actx.destination);
+      const s = actx.currentTime + t;
+      g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(0.35, s + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.2);
+      o.start(s); o.stop(s + 0.22);
+    });
+  } catch (e) { }
+}
+function iniciarTimer(seg) {
+  timerTotal = seg; timerEnd = Date.now() + seg * 1000;
+  const el = $('#timer'); el.hidden = false; el.classList.remove('done');
+  $('#timer-pular').textContent = 'Pular';
+  $('#view').classList.add('has-timer');
+  clearInterval(timerInt); timerInt = setInterval(tickTimer, 250); tickTimer();
+}
+function tickTimer() {
+  const left = Math.max(0, Math.ceil((timerEnd - Date.now()) / 1000));
+  $('#timer-txt').textContent = mmss(left);
+  $('#timer-prog').style.width = (timerTotal ? (1 - left / timerTotal) * 100 : 100).toFixed(1) + '%';
+  if (left <= 0) {
+    clearInterval(timerInt); timerInt = null;
+    const el = $('#timer'); el.classList.add('done');
+    $('#timer-txt').textContent = 'Bora!';
+    $('#timer-pular').textContent = 'OK';
+    bip(); try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch (e) { }
+    setTimeout(() => { if (!timerInt) fecharTimer(); }, 8000);
+  }
+}
+function fecharTimer() { clearInterval(timerInt); timerInt = null; $('#timer').hidden = true; $('#view').classList.remove('has-timer'); }
+
+function finalizarSheet() {
+  const min = Math.max(1, Math.round((Date.now() - new Date(sessao.inicio)) / 60000));
+  const feitas = sessao.exercicios.reduce((s, e) => s + e.series.filter(x => x.feito).length, 0);
+  abrirSheet(`
+    <h2>Finalizar ${esc(sessao.fichaNome)}</h2>
+    ${feitas ? `<p class="muted">${feitas} séries feitas.</p>` : '<p class="muted" style="color:var(--amber)">Nenhuma série marcada como feita. Só as séries marcadas entram no histórico de carga.</p>'}
+    <form data-form="finalizar" style="display:flex;flex-direction:column;gap:12px">
+      <div class="fields3">
+        <div class="field"><label for="f-min">Duração (min)</label><input id="f-min" inputmode="numeric" value="${min}"></div>
+        <div class="field"><label for="f-kcal">Calorias</label><input id="f-kcal" inputmode="numeric" placeholder="Garmin"></div>
+        <div class="field"><label for="f-fc">FC média</label><input id="f-fc" inputmode="numeric" placeholder="bpm"></div>
+      </div>
+      <p class="hint">Calorias e frequência cardíaca: copie do resumo do treino no Garmin.</p>
+      <div class="field"><label for="f-obs">Observação (opcional)</label><input id="f-obs" placeholder="ex.: subi carga no agachamento" autocomplete="off"></div>
+      <button class="cta" type="submit">Salvar treino</button>
+    </form>`);
+}
+function salvarTreino(f) {
+  const s = sessao;
+  const t = {
+    id: novoId(), fichaId: s.fichaId, fichaNome: s.fichaNome, inicio: s.inicio, fim: new Date().toISOString(),
+    data: localISO(new Date(s.inicio)),
+    duracaoMin: num(f.querySelector('#f-min').value), calorias: num(f.querySelector('#f-kcal').value),
+    fcMedia: num(f.querySelector('#f-fc').value), obs: f.querySelector('#f-obs').value.trim(),
+    exercicios: s.exercicios.map(e => ({ nome: e.nome, series: e.series.map(x => ({ carga: num(x.carga) || 0, reps: num(x.reps) || 0, feito: !!x.feito })) }))
+  };
+  store.put('treinos', t);
+  sessao = null; lsSet(sessKey(), null); soltarWakeLock(); fecharTimer(); fecharSheet();
+  render(true); toast('Treino salvo. Mandou bem!');
+}
+
+function verTreino(id) {
+  const t = S.treinos.find(x => x.id === id); if (!t) return;
+  abrirSheet(`
+    <h2>${esc(t.fichaNome)}</h2>
+    <p class="muted">${dataLonga(t.data)} · ${t.duracaoMin || '–'} min${t.calorias ? ' · ' + fmt(t.calorias) + ' kcal' : ''}${t.fcMedia ? ' · FC ' + fmt(t.fcMedia) + ' bpm' : ''}</p>
+    ${t.obs ? `<p>${esc(t.obs)}</p>` : ''}
+    <div class="card">${t.exercicios.map(e => `<div class="item"><span><strong>${esc(e.nome)}</strong><br><span class="hint num">${e.series.filter(s => s.feito).map(s => `${fmt1(s.carga)}kg×${s.reps}`).join(' · ') || 'não feito'}</span></span><span></span><span></span></div>`).join('')}</div>
+    <p class="hint">Volume total: ${fmt(volume(t))} kg</p>
+    <button class="btn danger" data-a="delTreino" data-id="${t.id}" type="button">Apagar este treino</button>`);
+}
+
+/* ---------------- editor de ficha ---------------- */
+function editarFicha(id) {
+  const f = id && S.fichas.find(x => x.id === id);
+  fichaEdit = f ? JSON.parse(JSON.stringify(f)) : {
+    id: novoId(), nome: `Treino ${String.fromCharCode(65 + S.fichas.length)}`, foco: '', ordem: S.fichas.length, novo: true,
+    exercicios: [{ nome: '', series: 3, reps: '10-12', descanso: 60 }]
+  };
+  renderFicha();
+}
+function renderFicha() {
+  const f = fichaEdit;
+  abrirSheet(`
+    <h2>${f.novo ? 'Nova ficha' : 'Editar ficha'}</h2>
+    <div class="fields2">
+      <div class="field"><label for="fe-nome">Nome</label><input id="fe-nome" data-fe="nome" value="${esc(f.nome)}"></div>
+      <div class="field"><label for="fe-foco">Foco</label><input id="fe-foco" data-fe="foco" value="${esc(f.foco)}" placeholder="ex.: Inferiores"></div>
+    </div>
+    ${f.exercicios.map((e, i) => `<div class="ex-edit">
+      <div class="top-row"><input aria-label="Exercício ${i + 1}" placeholder="Nome do exercício" data-fe="nome" data-i="${i}" value="${esc(e.nome)}"><button class="x" data-a="feRem" data-i="${i}" type="button" aria-label="Remover exercício">×</button></div>
+      <div class="fields3">
+        <div class="field"><label for="fe-s${i}">Séries</label><input id="fe-s${i}" inputmode="numeric" data-fe="series" data-i="${i}" value="${esc(e.series)}"></div>
+        <div class="field"><label for="fe-r${i}">Reps</label><input id="fe-r${i}" data-fe="reps" data-i="${i}" value="${esc(e.reps)}"></div>
+        <div class="field"><label for="fe-d${i}">Descanso (s)</label><input id="fe-d${i}" inputmode="numeric" data-fe="descanso" data-i="${i}" value="${esc(e.descanso)}"></div>
+      </div></div>`).join('')}
+    <button class="btn" data-a="feAdd" type="button">+ Adicionar exercício</button>
+    <button class="cta" data-a="feSalvar" type="button">Salvar ficha</button>
+    ${f.novo ? '' : `<button class="link-danger" data-a="feExcluir" type="button">Excluir ficha</button>`}`);
+}
+
+/* ---------------- ajustes ---------------- */
+function abrirPerfil() {
+  const p = cfg(); const u = store.user;
+  const conta = store.mode === 'cloud'
+    ? `<div class="acct">${u.photoURL ? `<img src="${esc(u.photoURL)}" alt="" width="44" height="44" style="border-radius:50%">` : ''}<div><strong>${esc(u.displayName || '')}</strong><p class="hint">${esc(u.email || '')}</p></div></div>`
+    : `<p class="demo-flag">Modo demonstração. Configure o Firebase para ativar o login com Google e salvar na nuvem.</p>`;
+  abrirSheet(`
+    <h2>Ajustes</h2>
+    ${conta}
+    <div class="card">
+      <div class="field"><label for="p-nome">Como quer ser chamada</label><input id="p-nome" data-p="nome" value="${esc(p.nome || '')}" placeholder="${esc(primeiroNome())}"></div>
+    </div>
+    ${cardMeta()}
+    ${cardLembretes()}
+    ${cardStrava()}
+    <div class="card">
+      <h3>Apple Saúde</h3>
+      <p class="hint">O botão “Enviar ao Apple Saúde” do Diário abre o atalho <b>${esc(NOME_ATALHO)}</b>. Crie uma vez no app Atalhos:</p>
+      <ol class="steps">
+        <li>Atalhos → <b>+</b> → nomeie <b>${esc(NOME_ATALHO)}</b>.</li>
+        <li>Adicione <b>Obter Dicionário de</b> → <b>Entrada do Atalho</b>.</li>
+        <li><b>Obter Valor do Dicionário</b> com a chave <b>peso</b>.</li>
+        <li><b>Se</b> o valor <b>tiver qualquer valor</b> → <b>Registrar Amostra de Saúde</b>: tipo <b>Peso</b>, valor = Valor do Dicionário, unidade <b>kg</b>.</li>
+        <li>Repita os passos 3 e 4 com a chave <b>kcal</b> e o tipo <b>Energia Alimentar</b> (kcal).</li>
+      </ol>
+      <p class="hint">Treinos e frequência cardíaca entram no Saúde pelo próprio Garmin Connect: Garmin Connect → Mais → Configurações → Apps conectados → Apple Saúde.</p>
+    </div>
+    <div class="card">
+      <h3>Backup</h3>
+      <p class="hint">Copia todos os dados em formato de texto.</p>
+      <button class="btn" data-a="backup" type="button">Copiar backup</button>
+      <textarea id="backup-txt" hidden readonly aria-label="Backup"></textarea>
+    </div>
+    <button class="btn danger" data-a="sair" type="button">${store.mode === 'cloud' ? 'Sair da conta' : 'Sair do modo demonstração'}</button>`);
+}
+
+/* ---------------- sheet ---------------- */
+function abrirSheet(html) { $('#sheet-body').innerHTML = `<button type="button" class="sheet-x" data-a="fechar" aria-label="Fechar">×</button>` + html; $('#sheet').hidden = false; document.body.style.overflow = 'hidden'; }
+function fecharSheet() { $('#sheet').hidden = true; $('#sheet-body').innerHTML = ''; document.body.style.overflow = ''; fichaEdit = null; }
+
+function armar(btn, texto) {
+  if (btn.dataset.armed === '1') return true;
+  btn.dataset.armed = '1'; const orig = btn.textContent; btn.textContent = texto;
+  setTimeout(() => { btn.dataset.armed = ''; btn.textContent = orig; }, 3500);
+  return false;
+}
+
+/* ---------------- eventos ---------------- */
+const ACOES = {
+  irAba(b) { aba = b.dataset.tab; render(true); },
+  irTreino() { aba = 'treino'; render(true); },
+  iniciar(b) { iniciar(b.dataset.id); },
+  editarFicha(b) { editarFicha(b.dataset.id); },
+  verTreino(b) { verTreino(b.dataset.id); },
+  delTreino(b) { if (!armar(b, 'Toque de novo para apagar')) return; store.del('treinos', b.dataset.id); fecharSheet(); render(); toast('Treino apagado.'); },
+  serieOk(b) {
+    destravarAudio();
+    const e = sessao.exercicios[+b.dataset.e], s = e.series[+b.dataset.s];
+    s.feito = !s.feito; salvarSessao();
+    b.closest('.serie').classList.toggle('ok', s.feito);
+    if (s.feito) iniciarTimer(e.descanso);
+  },
+  addSerie(b) { const e = sessao.exercicios[+b.dataset.e]; const l = e.series[e.series.length - 1] || {}; e.series.push({ carga: l.carga || '', reps: l.reps || '', feito: false }); salvarSessao(); render(); },
+  remSerie(b) { const e = sessao.exercicios[+b.dataset.e]; if (e.series.length > 1) e.series.pop(); salvarSessao(); render(); },
+  finalizar() { finalizarSheet(); },
+  cancelarTreino(b) { if (!armar(b, 'Toque de novo para descartar')) return; sessao = null; lsSet(sessKey(), null); soltarWakeLock(); fecharTimer(); render(true); toast('Treino descartado.'); },
+  timerMais() { timerEnd += 15000; timerTotal += 15; if (!timerInt) iniciarTimer(Math.ceil((timerEnd - Date.now()) / 1000)); },
+  timerPular() { fecharTimer(); },
+  diaPrev() { diaSel = addDias(diaSel, -1); render(); },
+  diaNext() { if (diaSel < hoje()) { diaSel = addDias(diaSel, 1); render(); } },
+  delRefeicao(b) {
+    const d = diaDe(diaSel); if (!d) return;
+    const refeicoes = [...(d.refeicoes || [])]; refeicoes.splice(+b.dataset.i, 1);
+    store.put('diario', { ...d, refeicoes }); render();
+  },
+  enviarSaude() {
+    const d = diaInfo(diaSel);
+    if (d.peso == null && !d.consumidas) { toast('Registre peso ou alimentação antes de enviar.'); return; }
+    const payload = { data: diaSel + 'T12:00:00' };
+    if (d.peso != null) payload.peso = d.peso;
+    if (d.consumidas) payload.kcal = d.consumidas;
+    const url = `shortcuts://run-shortcut?name=${encodeURIComponent(NOME_ATALHO)}&input=text&text=${encodeURIComponent(JSON.stringify(payload))}`;
+    toast('Abrindo o app Atalhos…');
+    location.href = url;
+  },
+  delAplicacao(b) { if (!armar(b, '?')) return; store.del('mounjaro', b.dataset.id); render(); toast('Aplicação apagada.'); },
+  perfil() { abrirPerfil(); },
+  fechar() { fecharSheet(); },
+  feAdd() { fichaEdit.exercicios.push({ nome: '', series: 3, reps: '10-12', descanso: 60 }); renderFicha(); const ins = document.querySelectorAll('.ex-edit input[data-fe="nome"]'); ins[ins.length - 1]?.focus(); },
+  feRem(b) { fichaEdit.exercicios.splice(+b.dataset.i, 1); renderFicha(); },
+  feSalvar() {
+    const f = fichaEdit;
+    if (!f.nome.trim()) { toast('Dê um nome para a ficha.'); return; }
+    f.exercicios = f.exercicios.filter(e => e.nome.trim()).map(e => ({ nome: e.nome.trim(), series: num(e.series) || 3, reps: String(e.reps || '').trim(), descanso: num(e.descanso) || 60 }));
+    delete f.novo; delete f.exemplo;
+    store.put('fichas', f); fecharSheet(); render(); toast('Ficha salva.');
+  },
+  feExcluir(b) { if (!armar(b, 'Toque de novo para excluir a ficha')) return; store.del('fichas', fichaEdit.id); fecharSheet(); render(); toast('Ficha excluída.'); },
+  async backup() {
+    const txt = JSON.stringify({ exportado: new Date().toISOString(), ...S }, null, 1);
+    const ta = $('#backup-txt'); ta.value = txt;
+    try { await navigator.clipboard.writeText(txt); toast('Backup copiado.'); }
+    catch (e) { ta.hidden = false; ta.focus(); ta.select(); toast('Selecionei o texto: toque em Copiar.'); }
+  },
+  async sair() {
+    fecharSheet();
+    if (store.mode === 'cloud') { try { await firebase.auth().signOut(); } catch (e) { } }
+    else { mostrarLogin(); }
+  },
+  loginGoogle() { entrar(); }
+};
+
+document.addEventListener('click', (ev) => {
+  const tab = ev.target.closest('.tabs button');
+  if (tab) { aba = tab.dataset.tab; render(true); return; }
+  const b = ev.target.closest('[data-a]');
+  if (b && ACOES[b.dataset.a]) { ev.preventDefault(); ACOES[b.dataset.a](b); }
+});
+
+document.addEventListener('input', (ev) => {
+  const t = ev.target;
+  if (extraInput(t)) return;
+  if (t.dataset.sf && sessao) {
+    sessao.exercicios[+t.dataset.e].series[+t.dataset.s][t.dataset.sf] = t.value; salvarSessao();
+  } else if (t.dataset.fe && fichaEdit) {
+    if (t.dataset.i != null) fichaEdit.exercicios[+t.dataset.i][t.dataset.fe] = t.value;
+    else fichaEdit[t.dataset.fe] = t.value;
+  }
+});
+
+document.addEventListener('change', (ev) => {
+  const t = ev.target;
+  if (extraChange(t)) return;
+  if (t.dataset.f) {
+    const d = diaDe(diaSel) || { id: diaSel, refeicoes: [] };
+    const v = num(t.value);
+    store.put('diario', { ...d, [t.dataset.f]: v });
+    render();
+  } else if (t.dataset.p) {
+    salvarCfg({ [t.dataset.p]: t.value.trim() });
+    const mc = $('#meta-calc'); if (mc) mc.innerHTML = metaCalcHTML();
+    render();
+  } else if (t.id === 'ex-sel') {
+    exSel = t.value; render();
+  }
+});
+
+document.addEventListener('submit', (ev) => {
+  const f = ev.target; ev.preventDefault();
+  if (f.dataset.form === 'aplicacao') {
+    const data = $('#m-data').value || hoje();
+    const dose = num((f.querySelector('input[name="m-dose"]:checked') || {}).value);
+    if (!dose) { toast('Escolha a dose.'); return; }
+    store.put('mounjaro', { id: novoId(), data, dose, local: $('#m-local').value, obs: $('#m-obs').value.trim() });
+    render(); toast(`Aplicação de ${fmt1(dose)} mg registrada.`);
+  } else if (f.dataset.form === 'finalizar') {
+    salvarTreino(f);
+  }
+});
+
+setInterval(() => { const c = $('#crono'); if (c && sessao) c.textContent = mmss(Math.floor((Date.now() - new Date(sessao.inicio)) / 1000)); }, 1000);
+
+/* ---------------- login e início ---------------- */
+const firebaseOk = () => !!(FIREBASE_CONFIG.apiKey && window.firebase);
+
+function mostrarLogin(msg) {
+  $('#boot').hidden = true; $('#app').hidden = true; $('#login').hidden = false;
+  const m = $('#login-msg');
+  if (msg) { m.textContent = msg; m.hidden = false; }
+  else if (!firebaseOk()) { m.textContent = 'Login com Google ainda não configurado. Entre no modo demonstração para testar: os dados ficam só neste aparelho.'; m.hidden = false; $('#btn-google span').textContent = 'Entrar no modo demonstração'; }
+  else m.hidden = true;
+}
+
+async function abrirApp() {
+  await store.loadAll();
+  semear();
+  sessao = lsGet(sessKey(), null);
+  const av = $('#avatar');
+  if (store.user && store.user.photoURL) av.innerHTML = `<img src="${esc(store.user.photoURL)}" alt="">`;
+  else av.textContent = primeiroNome().charAt(0).toUpperCase();
+  $('#boot').hidden = true; $('#login').hidden = true; $('#app').hidden = false;
+  const h = location.hash.slice(1); if (VIEWS[h]) aba = h;
+  render(true);
+  retornoStrava().then(() => sincronizarStrava(false));
+}
+
+async function entrar() {
+  if (!firebaseOk()) { store.mode = 'local'; store.uid = 'demo'; store.user = null; await abrirApp(); return; }
+  const prov = new firebase.auth.GoogleAuthProvider();
+  prov.setCustomParameters({ prompt: 'select_account' });
+  try { await firebase.auth().signInWithPopup(prov); }
+  catch (e) {
+    if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/cancelled-popup-request'].includes(e.code)) {
+      try { await firebase.auth().signInWithRedirect(prov); } catch (e2) { mostrarLogin('Não consegui abrir o login do Google. Tente de novo.'); }
+    } else if (e.code !== 'auth/popup-closed-by-user') {
+      mostrarLogin('Não consegui entrar: ' + (e.message || e.code));
+    }
+  }
+}
+
+function iniciarApp() {
+  if (!firebaseOk()) { mostrarLogin(); return; }
+  firebase.initializeApp(FIREBASE_CONFIG);
+  const fs = firebase.firestore();
+  fs.enablePersistence({ synchronizeTabs: true }).catch(() => { });
+  firebase.auth().getRedirectResult().catch(e => mostrarLogin('Não consegui entrar: ' + (e.message || e.code)));
+  firebase.auth().onAuthStateChanged(async (u) => {
+    if (!u) { mostrarLogin(); return; }
+    if (EMAILS_PERMITIDOS.length && !EMAILS_PERMITIDOS.map(x => x.toLowerCase()).includes((u.email || '').toLowerCase())) {
+      await firebase.auth().signOut();
+      mostrarLogin(`A conta ${u.email} não tem acesso a este app.`);
+      return;
+    }
+    store.mode = 'cloud'; store.uid = u.uid; store.user = u; store.fs = fs;
+    await abrirApp();
+  });
+}
+
+
+/* =====================================================================
+   META DE CALORIAS — sempre calculada para perda de peso
+   TMB (Mifflin-St Jeor) × nível de atividade = gasto estimado do dia.
+   Meta = gasto − déficit do ritmo escolhido, com dois limites de
+   segurança: déficit de no máximo 25% do gasto, e meta nunca abaixo
+   da TMB nem de 1.200 kcal.
+   ===================================================================== */
+const ATIVIDADES = [['1.2', 'Sedentária · quase sem treino'], ['1.375', 'Leve · 1 a 3x/semana'], ['1.55', 'Moderada · 3 a 5x/semana'], ['1.725', 'Alta · 6 a 7x/semana']];
+const RITMOS = [['300', 'Suave · ~0,3 kg/semana'], ['500', 'Moderado · ~0,5 kg/semana'], ['750', 'Acelerado · ~0,7 kg/semana']];
+
+function idadeDe(nasc) {
+  if (!nasc) return null;
+  const n = new Date(nasc + 'T12:00:00'), h = new Date();
+  let i = h.getFullYear() - n.getFullYear();
+  if (h.getMonth() < n.getMonth() || (h.getMonth() === n.getMonth() && h.getDate() < n.getDate())) i--;
+  return i > 0 && i < 120 ? i : null;
+}
+function metaCalc() {
+  const p = cfg();
+  const ps = pesos(); const peso = ps.length ? ps[ps.length - 1].peso : null;
+  const altura = num(p.altura), idade = idadeDe(p.nascimento), sexo = p.sexo || 'f';
+  const falta = [];
+  if (!peso) falta.push('peso (registre no Diário)');
+  if (!altura) falta.push('altura');
+  if (!idade) falta.push('data de nascimento');
+  if (falta.length) return { falta };
+  const tmb = 10 * peso + 6.25 * altura - 5 * idade + (sexo === 'm' ? 5 : -161);
+  const fator = num(p.atividade) || 1.375;
+  const gasto = tmb * fator;
+  const ritmo = num(p.ritmo) || 500;
+  const deficit = Math.min(ritmo, gasto * 0.25);
+  const piso = Math.max(tmb, 1200);
+  const meta = Math.max(gasto - deficit, piso);
+  const deficitReal = gasto - meta;
+  return {
+    peso, altura, idade, tmb: Math.round(tmb), gasto: Math.round(gasto), meta: Math.round(meta / 10) * 10,
+    deficit: Math.round(deficitReal), kgSemana: deficitReal * 7 / 7700, limitado: meta === piso && gasto - ritmo < piso
+  };
+}
+const metaDiaria = () => metaCalc().meta || null;
+
+function metaCalcHTML() {
+  const m = metaCalc();
+  if (m.falta) return `<p class="hint">Para calcular a meta, falta: ${m.falta.join(', ')}.</p>`;
+  const mp = num(cfg().metaPeso);
+  return `<div class="meta-res">
+      <div><span class="hint">Meta diária</span><strong>${fmt(m.meta)} <small>kcal</small></strong></div>
+      <div class="meta-linhas">
+        <p><span>Taxa metabólica basal</span><b>${fmt(m.tmb)} kcal</b></p>
+        <p><span>Gasto estimado do dia</span><b>${fmt(m.gasto)} kcal</b></p>
+        <p><span>Déficit para perder peso</span><b>−${fmt(m.deficit)} kcal</b></p>
+        <p><span>Perda esperada</span><b>~${fmt1(m.kgSemana)} kg/semana</b></p>
+      </div>
+    </div>
+    <p class="hint">Calculada com seu último peso (${fmt1(m.peso)} kg), ${m.idade} anos e ${fmt(m.altura)} cm. Atualiza sozinha a cada novo peso.${m.limitado ? ' O ritmo foi reduzido para a meta não ficar abaixo da sua taxa basal.' : ''}${mp && m.peso <= mp ? ' Você atingiu a meta de peso: vale combinar com o médico ou a nutricionista os próximos passos.' : ''}</p>`;
+}
+function cardMeta() {
+  const p = cfg();
+  const opt = (lista, val) => lista.map(([v, t]) => `<option value="${v}" ${String(val) === v ? 'selected' : ''}>${t}</option>`).join('');
+  return `<div class="card">
+    <h3>Meta de calorias</h3>
+    <p class="hint">Calculada para perda de peso a partir da sua taxa metabólica basal.</p>
+    <div class="fields2">
+      <div class="field"><label for="p-sexo">Sexo</label><select id="p-sexo" data-p="sexo"><option value="f" ${p.sexo !== 'm' ? 'selected' : ''}>Feminino</option><option value="m" ${p.sexo === 'm' ? 'selected' : ''}>Masculino</option></select></div>
+      <div class="field"><label for="p-alt">Altura (cm)</label><input id="p-alt" inputmode="numeric" placeholder="ex.: 165" data-p="altura" value="${esc(p.altura || '')}"></div>
+    </div>
+    <div class="fields2">
+      <div class="field"><label for="p-nasc">Nascimento</label><input id="p-nasc" type="date" data-p="nascimento" value="${esc(p.nascimento || '')}"></div>
+      <div class="field"><label for="p-mp">Meta de peso (kg)</label><input id="p-mp" inputmode="decimal" data-p="metaPeso" value="${esc(p.metaPeso || '')}"></div>
+    </div>
+    <div class="field"><label for="p-ativ">Nível de atividade</label><select id="p-ativ" data-p="atividade">${opt(ATIVIDADES, p.atividade || '1.375')}</select></div>
+    <div class="field"><label for="p-ritmo">Ritmo de perda</label><select id="p-ritmo" data-p="ritmo">${opt(RITMOS, p.ritmo || '500')}</select></div>
+    <div id="meta-calc">${metaCalcHTML()}</div>
+    <p class="disclaimer">Estimativa pela fórmula de Mifflin-St Jeor. Com Mounjaro o apetite costuma cair: evite ficar muito abaixo da meta e priorize proteína. Ajustes de dieta devem seguir a orientação do médico ou da nutricionista.</p>
+  </div>`;
+}
+
+/* =====================================================================
+   ALIMENTOS — calorias calculadas automaticamente
+   kcal por 100 g (ou 100 ml), valores aproximados das tabelas TACO
+   (Unicamp) e USDA. Porções em gramas.
+   ===================================================================== */
+const ALIMENTOS = [
+  // cereais, pães e tubérculos
+  ['Arroz branco cozido', 128, [['colher de sopa', 25], ['escumadeira', 90]]],
+  ['Arroz integral cozido', 124, [['colher de sopa', 25], ['escumadeira', 90]]],
+  ['Feijão carioca cozido', 76, [['concha', 100], ['colher de sopa', 20]]],
+  ['Feijão preto cozido', 77, [['concha', 100], ['colher de sopa', 20]]],
+  ['Feijoada', 117, [['concha', 150]]],
+  ['Lentilha cozida', 93, [['concha', 100], ['colher de sopa', 20]]],
+  ['Grão-de-bico cozido', 164, [['colher de sopa', 22], ['concha', 100]]],
+  ['Macarrão cozido', 158, [['pegador', 110], ['prato', 220]]],
+  ['Pão francês', 300, [['unidade', 50]]],
+  ['Pão de forma', 253, [['fatia', 25]]],
+  ['Pão de forma integral', 253, [['fatia', 25]]],
+  ['Pão de queijo', 363, [['unidade média', 30]]],
+  ['Tapioca (goma hidratada)', 240, [['tapioca média', 60], ['colher de sopa', 20]]],
+  ['Cuscuz de milho cozido', 113, [['pedaço', 100]]],
+  ['Aveia em flocos', 394, [['colher de sopa', 15]]],
+  ['Granola', 420, [['colher de sopa', 15]]],
+  ['Biscoito de arroz', 387, [['unidade', 9]]],
+  ['Torrada', 400, [['unidade', 8]]],
+  ['Farofa pronta', 406, [['colher de sopa', 15]]],
+  ['Batata inglesa cozida', 52, [['unidade média', 140], ['colher de sopa', 30]]],
+  ['Batata doce cozida', 77, [['unidade média', 150], ['pedaço', 80]]],
+  ['Batata frita', 267, [['porção pequena', 100]]],
+  ['Purê de batata', 90, [['colher de sopa', 40]]],
+  ['Mandioca cozida', 125, [['pedaço', 100]]],
+  ['Inhame cozido', 97, [['pedaço', 100]]],
+  ['Milho verde', 98, [['colher de sopa', 20], ['espiga', 100]]],
+  ['Pizza de mussarela', 266, [['fatia', 100]]],
+  // proteínas
+  ['Peito de frango grelhado', 159, [['filé médio', 100], ['colher de sopa (desfiado)', 25]]],
+  ['Frango desfiado', 163, [['colher de sopa', 25]]],
+  ['Coxa de frango assada', 215, [['unidade', 100]]],
+  ['Ovo cozido', 146, [['unidade', 50]]],
+  ['Ovo frito', 240, [['unidade', 50]]],
+  ['Ovo mexido', 166, [['unidade (1 ovo)', 50]]],
+  ['Omelete', 154, [['de 2 ovos', 110]]],
+  ['Clara de ovo', 52, [['unidade', 33]]],
+  ['Patinho grelhado', 219, [['bife', 100]]],
+  ['Alcatra grelhada', 241, [['bife', 100]]],
+  ['Picanha grelhada', 289, [['fatia', 80]]],
+  ['Carne moída refogada', 212, [['colher de sopa', 25]]],
+  ['Lombo de porco assado', 210, [['fatia', 80]]],
+  ['Linguiça grelhada', 296, [['gomo', 60]]],
+  ['Filé de tilápia grelhado', 128, [['filé', 120]]],
+  ['Salmão grelhado', 229, [['filé', 120]]],
+  ['Atum em lata (em água)', 116, [['lata drenada', 120], ['colher de sopa', 20]]],
+  ['Sardinha em lata', 285, [['unidade', 30]]],
+  ['Camarão cozido', 90, [['colher de sopa', 20]]],
+  ['Presunto', 94, [['fatia', 15]]],
+  ['Peito de peru', 104, [['fatia', 15]]],
+  ['Tofu', 64, [['fatia', 50]]],
+  ['Whey protein', 400, [['scoop', 30]]],
+  // laticínios
+  ['Leite integral', 61, [['copo (200 ml)', 200], ['xícara', 240]], 'ml'],
+  ['Leite desnatado', 35, [['copo (200 ml)', 200], ['xícara', 240]], 'ml'],
+  ['Iogurte natural', 51, [['pote', 170]]],
+  ['Iogurte grego natural', 99, [['pote', 100]]],
+  ['Queijo minas frescal', 264, [['fatia', 30]]],
+  ['Queijo mussarela', 330, [['fatia', 15]]],
+  ['Queijo parmesão', 453, [['colher de sopa', 10]]],
+  ['Queijo cottage', 98, [['colher de sopa', 30]]],
+  ['Requeijão', 257, [['colher de sopa', 30]]],
+  ['Manteiga', 726, [['colher de chá', 5], ['colher de sopa', 10]]],
+  ['Creme de leite', 221, [['colher de sopa', 15]]],
+  ['Leite condensado', 313, [['colher de sopa', 20]]],
+  // frutas
+  ['Banana prata', 98, [['unidade', 70]]],
+  ['Banana nanica', 92, [['unidade', 100]]],
+  ['Maçã', 56, [['unidade', 130]]],
+  ['Pera', 53, [['unidade', 130]]],
+  ['Mamão papaia', 40, [['meia unidade', 150], ['fatia', 100]]],
+  ['Morango', 30, [['unidade', 12], ['xícara', 140]]],
+  ['Laranja', 37, [['unidade', 140]]],
+  ['Mexerica / tangerina', 38, [['unidade', 135]]],
+  ['Melancia', 33, [['fatia', 200]]],
+  ['Melão', 29, [['fatia', 150]]],
+  ['Abacaxi', 48, [['fatia', 75]]],
+  ['Manga', 64, [['unidade', 300], ['fatia', 100]]],
+  ['Uva', 53, [['unidade', 5], ['cacho pequeno', 100]]],
+  ['Kiwi', 51, [['unidade', 75]]],
+  ['Abacate', 96, [['colher de sopa', 30]]],
+  ['Açaí (polpa sem açúcar)', 58, [['pacote', 100]]],
+  // verduras e legumes
+  ['Alface', 11, [['prato', 50], ['folha', 10]]],
+  ['Salada verde (folhas)', 15, [['prato', 60]]],
+  ['Tomate', 15, [['unidade', 100], ['fatia', 15]]],
+  ['Pepino', 10, [['fatia', 10], ['unidade', 200]]],
+  ['Cenoura crua', 34, [['colher de sopa', 12], ['unidade', 100]]],
+  ['Cenoura cozida', 30, [['colher de sopa', 25]]],
+  ['Beterraba cozida', 32, [['colher de sopa', 30]]],
+  ['Brócolis cozido', 25, [['ramo', 30], ['xícara', 90]]],
+  ['Couve-flor cozida', 19, [['ramo', 30]]],
+  ['Abobrinha cozida', 15, [['colher de sopa', 30]]],
+  ['Chuchu cozido', 19, [['colher de sopa', 30]]],
+  ['Couve refogada', 90, [['colher de sopa', 20]]],
+  // gorduras, doces e oleaginosas
+  ['Azeite de oliva', 884, [['colher de sopa', 13], ['colher de chá', 4]]],
+  ['Óleo de soja', 884, [['colher de sopa', 13]]],
+  ['Pasta de amendoim', 600, [['colher de sopa', 15]]],
+  ['Amendoim torrado', 606, [['punhado', 30]]],
+  ['Castanha de caju', 570, [['unidade', 2.5]]],
+  ['Castanha-do-pará', 643, [['unidade', 4]]],
+  ['Amêndoa', 581, [['unidade', 1.2]]],
+  ['Mel', 309, [['colher de sopa', 15], ['colher de chá', 7]]],
+  ['Açúcar', 387, [['colher de chá', 5], ['colher de sopa', 12]]],
+  ['Chocolate ao leite', 540, [['quadradinho', 6], ['barra pequena', 25]]],
+  ['Chocolate 70%', 580, [['quadrado', 10]]],
+  ['Doce de leite', 306, [['colher de sopa', 20]]],
+  // bebidas
+  ['Café sem açúcar', 2, [['xícara', 50]], 'ml'],
+  ['Café com leite sem açúcar', 40, [['xícara', 150]], 'ml'],
+  ['Suco de laranja natural', 45, [['copo (200 ml)', 200]], 'ml'],
+  ['Refrigerante', 37, [['lata', 350], ['copo (200 ml)', 200]], 'ml'],
+  ['Refrigerante zero', 0, [['lata', 350]], 'ml'],
+  ['Água de coco', 22, [['copo (200 ml)', 200]], 'ml'],
+  ['Cerveja', 41, [['lata', 350], ['long neck', 355]], 'ml'],
+  ['Vinho tinto', 85, [['taça', 150]], 'ml']
+].map(([nome, k100, porcoes, un]) => ({ nome, k100, porcoes, un: un || 'g' }));
+
+const normTxt = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+function todosAlimentos() {
+  const meus = S.alimentos.map(a => ({ nome: a.nome, meu: true, id: a.id, kcalPorcao: num(a.kcal) || 0, porcoes: [[a.porcao || 'porção', 1]], un: null }));
+  return [...meus, ...ALIMENTOS];
+}
+function buscarAlimentos(q) {
+  const n = normTxt(q); if (n.length < 2) return [];
+  const palavras = n.split(/\s+/).map(p => p.length > 3 ? p.replace(/s$/, '') : p);
+  return todosAlimentos().map(a => {
+    const nm = normTxt(a.nome);
+    if (!palavras.every(p => nm.includes(p) || nm.includes(p.replace(/s$/, '')))) return null;
+    const score = (nm.startsWith(n) ? 0 : nm.split(/[\s(/-]+/).some(w => w.startsWith(palavras[0])) ? 1 : 2) - (a.meu ? 0.5 : 0);
+    return { a, score };
+  }).filter(Boolean).sort((x, y) => x.score - y.score || x.a.nome.length - y.a.nome.length).slice(0, 7).map(x => x.a);
+}
+// "150g arroz" -> {qtd:150, un:'g', resto:'arroz'} ; "2 ovos" -> {qtd:2, resto:'ovos'}
+function lerQuantidade(txt) {
+  const m = String(txt).match(/^\s*(\d+(?:[.,]\d+)?)\s*(g|gr|gramas|ml)?\s+(.+)$/i);
+  if (!m) return { resto: txt };
+  return { qtd: num(m[1]), un: m[2] ? (m[2].toLowerCase() === 'ml' ? 'ml' : 'g') : null, resto: m[3] };
+}
+function kcalDe(sel) {
+  if (!sel || !sel.food) return 0;
+  const f = sel.food, q = num(sel.qtd) || 0;
+  if (f.meu) return q * f.kcalPorcao;
+  if (sel.porcao === 'g' || sel.porcao === 'ml') return q * f.k100 / 100;
+  const p = f.porcoes.find(x => x[0] === sel.porcao) || f.porcoes[0];
+  return q * p[1] * f.k100 / 100;
+}
+function descDe(sel) {
+  const f = sel.food, q = fmt1(num(sel.qtd) || 0);
+  if (sel.porcao === 'g' || sel.porcao === 'ml') return `${f.nome} · ${q} ${sel.porcao}`;
+  return `${f.nome} · ${q} ${sel.porcao}`;
+}
+
+let addSel = null;     // alimento escolhido
+let tipoSel = null;    // refeição escolhida
+let kcalManual = false;
+
+function painelAlimento() {
+  const tipo = tipoSel || tipoPorHora();
+  return `<div class="addfood" id="addfood">
+    <select id="r-tipo" aria-label="Refeição">${TIPOS.map(t => `<option ${t === tipo ? 'selected' : ''}>${t}</option>`).join('')}</select>
+    <input id="r-busca" placeholder="Buscar alimento: arroz, 2 ovos, 150g frango…" autocomplete="off" aria-label="Buscar alimento" value="${addSel ? esc(addSel.food ? addSel.food.nome : addSel.nome) : ''}">
+    <div id="r-sugs" class="sugs"></div>
+    <div id="r-sel">${painelSel()}</div>
+  </div>`;
+}
+function painelSel() {
+  if (!addSel) return `<p class="hint">As calorias são calculadas pela quantidade. Valores aproximados das tabelas TACO e USDA.</p>`;
+  if (addSel.manual) {
+    return `<div class="selbox">
+      <p><strong>${esc(addSel.nome)}</strong> <span class="hint">não está na tabela</span></p>
+      <div class="fields2">
+        <div class="field"><label for="r-kcal">Calorias</label><input id="r-kcal" inputmode="numeric" placeholder="kcal" value="${esc(addSel.kcal || '')}"></div>
+        <div class="field"><label for="r-porc-nome">Porção</label><input id="r-porc-nome" placeholder="ex.: 1 pote" value="${esc(addSel.porcaoNome || '')}"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="r-salvar" ${addSel.salvar ? 'checked' : ''}> Salvar em “Meus alimentos” para as próximas vezes</label>
+      <p class="hint">Dica: pegue as calorias da porção no rótulo da embalagem.</p>
+      <button class="btn primary wide" data-a="addAlimento" type="button">Adicionar</button>
+    </div>`;
+  }
+  const f = addSel.food;
+  const opcoes = f.meu ? f.porcoes.map(p => p[0]) : [...f.porcoes.map(p => p[0]), f.un];
+  const k = Math.round(kcalDe(addSel));
+  return `<div class="selbox">
+    <div class="row between"><strong>${esc(f.nome)}</strong>${f.meu ? '<span class="chip teal">meu alimento</span>' : `<span class="chip">${fmt(f.k100)} kcal/100${f.un}</span>`}</div>
+    <div class="qtyrow">
+      <input id="r-qtd" inputmode="decimal" aria-label="Quantidade" value="${esc(String(addSel.qtd).replace('.', ','))}">
+      <select id="r-porcao" aria-label="Medida">${opcoes.map(o => `<option ${o === addSel.porcao ? 'selected' : ''} value="${esc(o)}">${esc(o)}${!f.meu && o !== f.un ? ` (${fmt1((f.porcoes.find(p => p[0] === o) || [0, 0])[1])}${f.un})` : ''}</option>`).join('')}</select>
+    </div>
+    <div class="kcalout"><span class="hint">Calorias</span><input id="r-kcal" inputmode="numeric" aria-label="Calorias calculadas" value="${kcalManual ? esc(addSel.kcalEdit) : k}"><span class="hint">kcal</span></div>
+    <button class="btn primary wide" data-a="addAlimento" type="button">Adicionar ao ${esc((tipoSel || tipoPorHora()).toLowerCase())}</button>
+  </div>`;
+}
+function atualizarSugs() {
+  const inp = $('#r-busca'); const box = $('#r-sugs'); if (!inp || !box) return;
+  const q = lerQuantidade(inp.value);
+  const res = buscarAlimentos(q.resto);
+  if (normTxt(q.resto).length < 2) { box.innerHTML = ''; return; }
+  box.innerHTML = res.map((a, i) => `<button type="button" data-a="escolherAlim" data-i="${i}"><span>${esc(a.nome)}</span><span class="hint">${a.meu ? fmt(a.kcalPorcao) + ' kcal/' + esc(a.porcoes[0][0]) : fmt(a.k100) + ' kcal/100' + a.un}</span></button>`).join('')
+    + `<button type="button" data-a="alimManual" class="manual"><span>Outro: “${esc(q.resto.trim())}”</span><span class="hint">digitar calorias</span></button>`;
+  box._res = res; box._q = q;
+}
+
+function adicionarRefeicao(desc, kcal) {
+  const d = diaDe(diaSel) || { id: diaSel };
+  const tipo = tipoSel || tipoPorHora();
+  store.put('diario', { ...d, refeicoes: [...(d.refeicoes || []), { tipo, desc, kcal: Math.round(kcal) || 0 }] });
+  addSel = null; kcalManual = false;
+  render(); toast(`${fmt(kcal)} kcal adicionadas ao ${tipo.toLowerCase()}.`);
+}
+
+Object.assign(ACOES, {
+  escolherAlim(b) {
+    const box = $('#r-sugs'); const a = box._res[+b.dataset.i]; const q = box._q || {};
+    let porcao = a.meu ? a.porcoes[0][0] : a.porcoes[0][0], qtd = q.qtd || 1;
+    if (q.un && !a.meu) porcao = a.un;
+    if (q.qtd && !q.un && q.qtd >= 20 && !a.meu) porcao = a.un; // "150 arroz" = 150 g
+    addSel = { food: a, qtd, porcao }; kcalManual = false;
+    $('#r-busca').value = a.nome; box.innerHTML = ''; $('#r-sel').innerHTML = painelSel();
+    $('#r-qtd')?.focus(); $('#r-qtd')?.select();
+  },
+  alimManual() {
+    const q = $('#r-sugs')._q || { resto: $('#r-busca').value };
+    addSel = { manual: true, nome: q.resto.trim(), salvar: true };
+    $('#r-sugs').innerHTML = ''; $('#r-sel').innerHTML = painelSel(); $('#r-kcal')?.focus();
+  },
+  addAlimento() {
+    if (!addSel) return;
+    if (addSel.manual) {
+      const kcal = num($('#r-kcal').value);
+      if (kcal == null) { toast('Digite as calorias.'); $('#r-kcal').focus(); return; }
+      const porc = $('#r-porc-nome').value.trim();
+      if ($('#r-salvar').checked && addSel.nome) store.put('alimentos', { id: novoId(), nome: addSel.nome, kcal, porcao: porc || 'porção' });
+      adicionarRefeicao(addSel.nome + (porc ? ` · ${porc}` : ''), kcal);
+      return;
+    }
+    const kcal = num($('#r-kcal').value);
+    if (!(num(addSel.qtd) > 0)) { toast('Informe a quantidade.'); return; }
+    adicionarRefeicao(descDe(addSel), kcal ?? kcalDe(addSel));
+  }
+});
+
+function inputAlimento(t) {
+  if (t.id === 'r-busca') { addSel = null; kcalManual = false; $('#r-sel').innerHTML = painelSel(); atualizarSugs(); return true; }
+  if (t.id === 'r-qtd' && addSel) { addSel.qtd = t.value; kcalManual = false; const k = $('#r-kcal'); if (k) k.value = Math.round(kcalDe(addSel)); return true; }
+  if (t.id === 'r-kcal' && addSel && !addSel.manual) { kcalManual = true; addSel.kcalEdit = t.value; return true; }
+  if (t.id === 'r-kcal' || t.id === 'r-porc-nome') return true;
+  return false;
+}
+function changeAlimento(t) {
+  if (t.id === 'r-tipo') { tipoSel = t.value; const b = $('#r-sel [data-a="addAlimento"]'); if (b && addSel && !addSel.manual) b.textContent = 'Adicionar ao ' + t.value.toLowerCase(); return true; }
+  if (t.id === 'r-porcao' && addSel) {
+    const antes = addSel.porcao; addSel.porcao = t.value; kcalManual = false;
+    // ao trocar para gramas, sugere a quantidade equivalente
+    if ((t.value === 'g' || t.value === 'ml') && antes !== t.value) {
+      const p = addSel.food.porcoes.find(x => x[0] === antes); if (p) addSel.qtd = Math.round((num(addSel.qtd) || 1) * p[1]);
+    } else if (antes === 'g' || antes === 'ml') { addSel.qtd = 1; }
+    $('#r-sel').innerHTML = painelSel(); return true;
+  }
+  if (['r-busca', 'r-qtd', 'r-kcal', 'r-porc-nome', 'r-salvar'].includes(t.id)) { if (t.id === 'r-salvar' && addSel) addSel.salvar = t.checked; return true; }
+  return false;
+}
+
+/* =====================================================================
+   IMPORTAR TREINO — planilha (.xlsx/.csv), PDF com texto, .txt, .json
+   ou texto colado. Mostra uma prévia antes de salvar.
+   ===================================================================== */
+let impPrev = null;
+const LIB_XLSX = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+const LIB_PDF = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const LIB_PDF_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+function carregarScript(src) {
+  return new Promise((ok, erro) => {
+    if (document.querySelector(`script[src="${src}"]`)) return ok();
+    const s = document.createElement('script'); s.src = src; s.onload = ok;
+    s.onerror = () => erro(new Error('sem internet para ler esse tipo de arquivo'));
+    document.head.appendChild(s);
+  });
+}
+
+const RX_SXR = /(\d{1,2})\s*(?:x|×|\*)\s*(\d{1,3}(?:\s*(?:-|–|a|\/)\s*\d{1,3})?(?:\s*(?:s|seg|segundos)\b)?(?:\s*(?:reps?|repetiç\w*))?(?:\s*cada\s+(?:perna|lado|braço))?)/i;
+const RX_SERIES = /(\d{1,2})\s*s[ée]ries?\s*(?:de)?\s*(\d{1,3}(?:\s*(?:-|–|a)\s*\d{1,3})?)/i;
+
+function lerDescanso(txt) {
+  let m = txt.match(/(\d+(?:[.,]\d+)?)\s*(?:min|minutos?|')/i);
+  if (m) return Math.round(num(m[1]) * 60);
+  m = txt.match(/(\d{2,3})\s*(?:s|seg|segundos|")(?![a-z])/i) || txt.match(/desc\w*\.?\s*:?\s*(\d{2,3})/i);
+  return m ? num(m[1]) : null;
+}
+function limparNome(s) {
+  return s.replace(/[\s\-–—:|,;.]+$/, '').replace(/^[\s\-–—:|,;.]+/, '').replace(/\s{2,}/g, ' ').trim();
+}
+function ehCabecalho(l) {
+  if (/^(treino|ficha|dia|day|workout)\b/i.test(l)) return true;
+  if (/^[A-F]\s*[-:–).]\s*\S/.test(l) && !RX_SXR.test(l)) return true;
+  if (/^[A-F]$/.test(l)) return true;
+  return /:$/.test(l) && !RX_SXR.test(l) && l.length < 40;
+}
+function nomeFicha(l, idx) {
+  let m = l.match(/^(?:treino|ficha)\s*([A-F])\b\s*[-:–)]*\s*(.*)$/i);
+  if (m) return { nome: `Treino ${m[1].toUpperCase()}`, foco: limparNome(m[2]) };
+  m = l.match(/^([A-F])\s*[-:–).]*\s*(.*)$/);
+  if (m) return { nome: `Treino ${m[1]}`, foco: limparNome(m[2]) };
+  const t = limparNome(l.replace(/^(treino|ficha)\s*/i, ''));
+  return { nome: t ? `Treino ${t}`.slice(0, 40) : `Treino ${String.fromCharCode(65 + idx)}`, foco: '' };
+}
+
+function parseTexto(txt) {
+  const fichas = []; let cur = null;
+  const nova = (info) => { cur = { nome: info.nome, foco: info.foco || '', exercicios: [] }; fichas.push(cur); };
+  for (const raw of String(txt).split(/\r?\n/)) {
+    let l = raw.replace(/\t/g, ' ').replace(/^\s*(?:\d{1,2}\s*[.)\-–]\s+|[-•*·▪●]\s*)/, '').trim();
+    if (!l) continue;
+    if (ehCabecalho(l)) { nova(nomeFicha(l, fichas.length)); continue; }
+    let m = l.match(RX_SXR) || l.match(RX_SERIES);
+    let nome, series = 3, reps = '10-12', resto = '';
+    if (m) {
+      nome = limparNome(l.slice(0, m.index));
+      series = num(m[1]) || 3; reps = m[2].replace(/\s+/g, ' ').replace(/\s*(reps?|repetiç\w*)$/i, '').trim();
+      resto = l.slice(m.index + m[0].length);
+      if (!nome) nome = limparNome(resto.replace(/\d+\s*(?:s|seg|min)\b.*/i, ''));
+    } else {
+      // linha sem séries x reps: só aceita se parecer nome de exercício
+      if (!cur || /\d/.test(l) || l.split(/\s+/).length > 6 || /:/.test(l)) continue;
+      nome = limparNome(l);
+    }
+    if (!nome || nome.length < 3) continue;
+    if (!cur) nova({ nome: 'Treino A', foco: '' });
+    cur.exercicios.push({ nome: nome.charAt(0).toUpperCase() + nome.slice(1), series, reps, descanso: lerDescanso(resto) || 60 });
+  }
+  return fichas.filter(f => f.exercicios.length);
+}
+
+function parseTabela(rows) {
+  rows = rows.map(r => r.map(c => String(c ?? '').trim())).filter(r => r.some(Boolean));
+  const hi = rows.findIndex(r => r.some(c => /exerc/i.test(c)));
+  if (hi < 0) return parseTexto(rows.map(r => r.filter(Boolean).join(' ')).join('\n'));
+  const h = rows[hi].map(normTxt);
+  const col = (re) => h.findIndex(c => re.test(c));
+  const cF = col(/^(ficha|treino|dia|divisao)/), cE = col(/exerc/), cS = col(/serie/), cR = col(/rep/), cD = col(/descanso|interv|pausa/);
+  const fichas = []; const por = {}; let atual = 'Treino A';
+  for (const r of rows.slice(hi + 1)) {
+    if (cF >= 0 && r[cF]) atual = nomeFicha(r[cF], fichas.length).nome;
+    const nome = r[cE]; if (!nome) { if (r.filter(Boolean).length === 1 && ehCabecalho(r.find(Boolean))) atual = nomeFicha(r.find(Boolean), fichas.length).nome; continue; }
+    if (!por[atual]) { por[atual] = { nome: atual, foco: '', exercicios: [] }; fichas.push(por[atual]); }
+    let series = num(r[cS]), reps = cR >= 0 ? r[cR] : '';
+    const m = (r[cS] || '').match(RX_SXR); if (m) { series = num(m[1]); reps = reps || m[2]; }
+    por[atual].exercicios.push({ nome, series: series || 3, reps: reps || '10-12', descanso: (cD >= 0 && lerDescanso(r[cD] + (/^\d+$/.test(r[cD]) ? 's' : ''))) || 60 });
+  }
+  return fichas.filter(f => f.exercicios.length);
+}
+
+async function lerArquivo(file) {
+  const nome = file.name.toLowerCase();
+  if (/\.(jpe?g|png|heic|webp)$/.test(nome)) throw new Error('foto ainda não é lida automaticamente. Use planilha, PDF com texto ou cole o texto');
+  if (nome.endsWith('.json')) {
+    const j = JSON.parse(await file.text());
+    const arr = Array.isArray(j) ? j : j.fichas;
+    if (!Array.isArray(arr)) throw new Error('JSON sem lista de fichas');
+    return arr.map(f => ({ nome: f.nome || 'Treino', foco: f.foco || '', exercicios: (f.exercicios || []).map(e => ({ nome: e.nome, series: num(e.series) || 3, reps: String(e.reps || '10-12'), descanso: num(e.descanso) || 60 })) }));
+  }
+  if (/\.(xlsx|xls|ods)$/.test(nome)) {
+    await carregarScript(LIB_XLSX);
+    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    let todas = [];
+    wb.SheetNames.forEach(sn => {
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
+      let fs = parseTabela(rows);
+      // várias abas sem coluna de ficha: cada aba vira uma ficha com o nome da aba
+      if (wb.SheetNames.length > 1 && fs.length === 1 && fs[0].nome === 'Treino A') fs[0].nome = nomeFicha(sn, todas.length).nome;
+      todas = todas.concat(fs);
+    });
+    return todas;
+  }
+  if (nome.endsWith('.pdf')) {
+    await carregarScript(LIB_PDF);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = LIB_PDF_WORKER;
+    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    let linhas = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const tc = await (await pdf.getPage(i)).getTextContent();
+      const porY = {};
+      tc.items.forEach(it => { const y = Math.round(it.transform[5] / 3); (porY[y] = porY[y] || []).push(it); });
+      Object.keys(porY).map(Number).sort((a, b) => b - a).forEach(y => linhas.push(porY[y].sort((a, b) => a.transform[4] - b.transform[4]).map(it => it.str).join(' ')));
+    }
+    const fs = parseTexto(linhas.join('\n'));
+    if (!fs.length) throw new Error('não achei exercícios no PDF (se for uma foto escaneada, cole o texto)');
+    return fs;
+  }
+  const txt = await file.text();
+  if (nome.endsWith('.csv')) {
+    const sep = (txt.split('\n')[0].match(/;/g) || []).length > (txt.split('\n')[0].match(/,/g) || []).length ? ';' : ',';
+    return parseTabela(txt.split(/\r?\n/).map(l => l.split(sep).map(c => c.replace(/^"|"$/g, ''))));
+  }
+  return parseTexto(txt);
+}
+
+function abrirImport() {
+  impPrev = null;
+  abrirSheet(`
+    <h2>Importar treino</h2>
+    <p class="hint">Aceita planilha (.xlsx, .csv), PDF com texto, arquivo .txt ou o backup do app. Uma linha por exercício, por exemplo “Agachamento livre 4x10-12 90s”.</p>
+    <label class="btn wide filebtn" for="imp-file">Escolher arquivo</label>
+    <input type="file" id="imp-file" class="visually-hidden" accept=".xlsx,.xls,.ods,.csv,.txt,.pdf,.json,text/plain,application/pdf">
+    <div class="field"><label for="imp-txt">Ou cole o texto da ficha</label>
+      <textarea id="imp-txt" rows="6" placeholder="Treino A - Inferiores&#10;Agachamento livre 4x10-12 90s&#10;Leg press 4x12&#10;&#10;Treino B - Superiores&#10;Puxada frontal 4x10"></textarea></div>
+    <button class="btn" data-a="impTexto" type="button">Ler texto colado</button>
+    <div id="imp-prev"></div>`);
+}
+function mostrarPrevia(fichas) {
+  impPrev = fichas;
+  const box = $('#imp-prev'); if (!box) return;
+  if (!fichas.length) { box.innerHTML = '<p class="empty">Não encontrei exercícios. Confira se cada linha tem o nome e as séries, como “Remada baixa 3x12”.</p>'; return; }
+  const total = fichas.reduce((s, f) => s + f.exercicios.length, 0);
+  box.innerHTML = `<h3>Encontrei ${fichas.length} ficha${fichas.length > 1 ? 's' : ''} e ${total} exercícios</h3>
+    ${fichas.map(f => `<div class="card prev"><strong>${esc(f.nome)}${f.foco ? ' · ' + esc(f.foco) : ''}</strong>
+      ${f.exercicios.map(e => `<div class="item"><span>${esc(e.nome)}</span><span class="k">${e.series}×${esc(e.reps)} · ${e.descanso}s</span><span></span></div>`).join('')}</div>`).join('')}
+    <button class="cta" data-a="impAdd" type="button">Adicionar às minhas fichas</button>
+    <button class="btn danger wide" data-a="impSubst" type="button">Substituir as fichas atuais</button>
+    <p class="hint">Dá para ajustar tudo depois em Editar.</p>`;
+  box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function salvarImport(substituir) {
+  if (!impPrev) return;
+  if (substituir) S.fichas.slice().forEach(f => store.del('fichas', f.id));
+  const base = S.fichas.length;
+  impPrev.forEach((f, i) => store.put('fichas', { id: novoId(), nome: f.nome, foco: f.foco, ordem: base + i, exercicios: f.exercicios }));
+  const n = impPrev.length; impPrev = null; fecharSheet(); aba = 'treino'; render(true);
+  toast(`${n} ficha${n > 1 ? 's importadas' : ' importada'}.`);
+}
+
+Object.assign(ACOES, {
+  abrirImport() { abrirImport(); },
+  impTexto() { const t = $('#imp-txt').value; if (!t.trim()) { toast('Cole o texto da ficha primeiro.'); return; } mostrarPrevia(parseTexto(t)); },
+  impAdd() { salvarImport(false); },
+  impSubst(b) { if (!armar(b, 'Toque de novo: apaga as fichas atuais')) return; salvarImport(true); }
+});
+
+async function changeImport(t) {
+  if (t.id !== 'imp-file' || !t.files[0]) return false;
+  const box = $('#imp-prev'); box.innerHTML = '<p class="hint">Lendo arquivo…</p>';
+  try { mostrarPrevia(await lerArquivo(t.files[0])); }
+  catch (e) { box.innerHTML = `<p class="empty">Não consegui ler: ${esc(e.message)}.</p>`; }
+  t.value = '';
+  return true;
+}
+
+/* =====================================================================
+   STRAVA + LEMBRETES (notificações)
+   Ambos usam o servidor em WORKER_URL (pasta servidor/ do repositório).
+   ===================================================================== */
+const servidorOk = () => !!WORKER_URL;
+const stravaOk = () => !!(WORKER_URL && STRAVA_CLIENT_ID);
+const stravaCfg = () => S.config.find(x => x.id === 'strava');
+const TIPOS_STRAVA = {
+  WeightTraining: 'Musculação', Workout: 'Treino', Run: 'Corrida', TrailRun: 'Trilha', Walk: 'Caminhada', Hike: 'Caminhada',
+  Ride: 'Pedal', VirtualRide: 'Bike indoor', Swim: 'Natação', Yoga: 'Yoga', Pilates: 'Pilates', HighIntensityIntervalTraining: 'HIIT',
+  Crossfit: 'Crossfit', Elliptical: 'Elíptico', StairStepper: 'Escada', Rowing: 'Remo', Dance: 'Dança'
+};
+const tipoStrava = (t) => TIPOS_STRAVA[t] || t || 'Atividade';
+const ehForca = (t) => /WeightTraining|Workout|Crossfit|HighIntensity/i.test(t || '');
+
+async function workerFetch(path, opts = {}) {
+  const r = await fetch(WORKER_URL.replace(/\/$/, '') + path, opts);
+  const txt = await r.text();
+  let d = {}; try { d = JSON.parse(txt); } catch (e) { }
+  if (!r.ok) throw new Error(d.erro || d.message || ('erro ' + r.status));
+  return d;
+}
+const postJSON = (path, obj) => workerFetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obj) });
+
+/* ---------------- Strava ---------------- */
+function conectarStrava() {
+  if (!stravaOk()) { toast('O Strava ainda não foi configurado. Veja o passo 7 do README.'); return; }
+  const st = novoId(); lsSet('af:stravaState', st);
+  const volta = location.origin + location.pathname;
+  location.href = `https://www.strava.com/oauth/authorize?client_id=${encodeURIComponent(STRAVA_CLIENT_ID)}&response_type=code&redirect_uri=${encodeURIComponent(volta)}&approval_prompt=auto&scope=read,activity:read_all&state=${st}`;
+}
+async function retornoStrava() {
+  const q = new URLSearchParams(location.search);
+  if (!q.has('code') && !q.has('error')) return;
+  history.replaceState(null, '', location.pathname + location.hash);
+  if (q.get('error')) { toast('Conexão com o Strava cancelada.'); return; }
+  if (q.get('state') !== lsGet('af:stravaState', null)) { toast('Não consegui confirmar a conexão com o Strava. Tente de novo.'); return; }
+  if (!/activity:read/.test(q.get('scope') || '')) { toast('Marque a permissão de ver atividades ao conectar o Strava.'); return; }
+  try {
+    const t = await postJSON('/strava/token', { code: q.get('code') });
+    store.put('config', { id: 'strava', access: t.access_token, refresh: t.refresh_token, expira: t.expires_at, atleta: t.athlete ? `${t.athlete.firstname || ''} ${t.athlete.lastname || ''}`.trim() : '', ultimaSync: 0 });
+    toast('Strava conectado!');
+    await sincronizarStrava(true);
+  } catch (e) { toast('Não consegui conectar ao Strava: ' + e.message); }
+}
+async function tokenStrava() {
+  const c = stravaCfg(); if (!c) return null;
+  if (c.expira * 1000 > Date.now() + 60000) return c.access;
+  const t = await postJSON('/strava/token', { refresh_token: c.refresh });
+  store.put('config', { ...c, access: t.access_token, refresh: t.refresh_token, expira: t.expires_at });
+  return t.access_token;
+}
+async function stravaGet(path) {
+  const tk = await tokenStrava();
+  return workerFetch('/strava/api?path=' + encodeURIComponent(path), { headers: { Authorization: 'Bearer ' + tk } });
+}
+let sincronizando = false;
+async function sincronizarStrava(forcar) {
+  const c = stravaCfg();
+  if (!c || !servidorOk() || sincronizando) return;
+  if (!forcar && Date.now() - (c.ultimaSync || 0) < 30 * 60000) return;
+  sincronizando = true;
+  try {
+    const desde = Math.floor((c.ultimaSync ? c.ultimaSync - 3 * 864e5 : Date.now() - 60 * 864e5) / 1000);
+    const lista = await stravaGet(`/athlete/activities?after=${desde}&per_page=60`);
+    let detalhes = 0;
+    for (const a of lista) {
+      const id = 's' + a.id;
+      const ant = S.atividades.find(x => x.id === id);
+      let cal = ant ? ant.calorias : null;
+      if (cal == null && detalhes < 15) { try { const d = await stravaGet('/activities/' + a.id); cal = d.calories || null; } catch (e) { } detalhes++; }
+      const inicio = String(a.start_date_local || a.start_date).replace('Z', '');
+      store.put('atividades', {
+        id, nome: a.name, tipo: a.sport_type || a.type, inicio, data: inicio.slice(0, 10),
+        duracaoMin: Math.round((a.moving_time || a.elapsed_time || 0) / 60), distanciaKm: a.distance ? Math.round(a.distance / 100) / 10 : 0,
+        calorias: cal != null ? Math.round(cal) : null, fcMedia: a.average_heartrate ? Math.round(a.average_heartrate) : null, fcMax: a.max_heartrate ? Math.round(a.max_heartrate) : null
+      });
+    }
+    vincularTreinos();
+    store.put('config', { ...stravaCfg(), ultimaSync: Date.now() });
+    if (forcar) toast(lista.length ? `Strava: ${lista.length} atividade${lista.length > 1 ? 's' : ''} sincronizada${lista.length > 1 ? 's' : ''}.` : 'Strava em dia, nada novo.');
+    sincronizando = false;
+    if ($('#sheet').hidden) render();
+  } catch (e) {
+    console.error(e); if (forcar) toast('Erro ao sincronizar com o Strava: ' + e.message);
+  } finally { sincronizando = false; }
+}
+// Completa calorias e FC dos treinos do app com a atividade de musculação do mesmo dia no Strava (vinda do Garmin)
+function vincularTreinos() {
+  S.treinos.forEach(t => {
+    if (t.strava || (t.calorias && t.fcMedia)) return;
+    const a = S.atividades.find(x => x.data === t.data && ehForca(x.tipo) && !S.treinos.some(o => o.strava === x.id));
+    if (a) store.put('treinos', { ...t, strava: a.id, calorias: t.calorias || a.calorias, fcMedia: t.fcMedia || a.fcMedia });
+  });
+}
+const atividadesOrd = () => [...S.atividades].sort((a, b) => b.inicio.localeCompare(a.inicio));
+function linhaAtividade(a) {
+  const extra = [a.duracaoMin ? a.duracaoMin + ' min' : '', a.distanciaKm ? fmt1(a.distanciaKm) + ' km' : '', a.calorias ? fmt(a.calorias) + ' kcal' : '', a.fcMedia ? 'FC ' + a.fcMedia : ''].filter(Boolean).join(' · ');
+  return `<div class="ativ"><span class="chip strava">${esc(tipoStrava(a.tipo))}</span><div><strong>${esc(a.nome)}</strong><p class="hint">${dataCurta(a.data)} · ${extra}</p></div></div>`;
+}
+function stravaSecao() {
+  const c = stravaCfg();
+  if (!c) return `<div class="card strava-card"><div class="row between"><h3>Strava</h3><span class="chip">não conectado</span></div>
+    <p class="hint">Conecte para trazer as atividades do Garmin (via Strava) e completar calorias e frequência cardíaca dos treinos.</p>
+    <button class="btn strava-btn" data-a="conectarStrava" type="button">Conectar com Strava</button></div>`;
+  const at = atividadesOrd().slice(0, 8);
+  return `<h2 class="sec">Strava</h2><div class="card">
+    ${at.map(linhaAtividade).join('') || '<p class="empty">Nenhuma atividade nos últimos 60 dias.</p>'}
+    <button class="btn" data-a="syncStrava" type="button">${sincronizando ? 'Sincronizando…' : 'Sincronizar agora'}</button></div>`;
+}
+function stravaHoje() {
+  const at = S.atividades.filter(a => a.data === hoje());
+  if (!at.length) return '';
+  const kcal = at.reduce((s, a) => s + (a.calorias || 0), 0);
+  return `<div class="card"><div class="row between"><p class="eyebrow">Strava hoje</p>${kcal ? `<span class="chip strava">${fmt(kcal)} kcal</span>` : ''}</div>${at.map(linhaAtividade).join('')}</div>`;
+}
+function stravaDia(iso) {
+  const at = S.atividades.filter(a => a.data === iso && a.calorias);
+  if (!at.length) return '';
+  const kcal = at.reduce((s, a) => s + a.calorias, 0);
+  return `<p class="hint">Strava: ${fmt(kcal)} kcal em ${at.length} atividade${at.length > 1 ? 's' : ''} (${at.map(a => esc(tipoStrava(a.tipo))).join(', ')}).</p>`;
+}
+function cardStrava() {
+  const c = stravaCfg();
+  return `<div class="card"><h3>Strava</h3>
+    ${c ? `<p class="hint">Conectado${c.atleta ? ' como ' + esc(c.atleta) : ''}. Última sincronização: ${c.ultimaSync ? new Date(c.ultimaSync).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'nunca'}.</p>
+      <div class="row"><button class="btn" data-a="syncStrava" type="button">Sincronizar</button><button class="btn danger" data-a="desconectarStrava" type="button">Desconectar</button></div>`
+    : `<p class="hint">${stravaOk() ? 'Traz as atividades do Garmin (via Strava): calorias, frequência cardíaca, corridas e caminhadas.' : 'Falta configurar o servidor e o app do Strava (README, passo 7).'}</p>
+      <button class="btn strava-btn" data-a="conectarStrava" type="button">Conectar com Strava</button>`}
+  </div>`;
+}
+
+/* ---------------- Lembretes (Web Push) ---------------- */
+const ehIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const instalado = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const pushSuportado = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const b64uBytes = (s) => { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return Uint8Array.from(atob(s), c => c.charCodeAt(0)); };
+const prefsLembrete = () => ({ peso: true, mounjaro: true, ...(cfg().lembretes || {}) });
+
+function cardLembretes() {
+  const p = prefsLembrete(); const on = lsGet('af:pushOn', false) && pushSuportado() && Notification.permission === 'granted';
+  let estado;
+  if (!servidorOk()) estado = '<p class="hint">Falta configurar o servidor de notificações (README, passo 7).</p>';
+  else if (ehIOS && !instalado()) estado = '<p class="hint"><b>Primeiro adicione o app à Tela de Início</b> (Safari → Compartilhar → Adicionar à Tela de Início) e abra pelo ícone. O iPhone só manda notificação de app instalado.</p>';
+  else if (!pushSuportado()) estado = '<p class="hint">Este navegador não aceita notificações.</p>';
+  else estado = on ? '<p class="hint">Notificações ativas neste aparelho.</p>' : '';
+  return `<div class="card"><h3>Lembretes</h3>
+    <label class="check"><input type="checkbox" id="lb-peso" ${p.peso ? 'checked' : ''}> Peso todo dia às 07:00</label>
+    <label class="check"><input type="checkbox" id="lb-mj" ${p.mounjaro ? 'checked' : ''}> Mounjaro toda sexta às 22:00</label>
+    ${estado}
+    <div class="row">${on ? '<button class="btn" data-a="testarPush" type="button">Enviar teste</button>' : `<button class="btn primary" data-a="ativarPush" type="button" ${!servidorOk() || (ehIOS && !instalado()) ? 'disabled' : ''}>Ativar notificações</button>`}</div>
+  </div>`;
+}
+async function inscreverPush() {
+  const reg = await navigator.serviceWorker.ready;
+  const { key } = await workerFetch('/push/key');
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uBytes(key) });
+  await postJSON('/push/subscribe', { subscription: sub.toJSON(), prefs: prefsLembrete() });
+  return sub;
+}
+async function ativarPush() {
+  if (!pushSuportado()) { toast('Este navegador não aceita notificações.'); return; }
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { toast('Notificações bloqueadas. Libere em Ajustes do iPhone → Notificações → Amandinha.'); return; }
+    await inscreverPush();
+    lsSet('af:pushOn', true); toast('Lembretes ativados.'); abrirPerfil();
+  } catch (e) { toast('Não consegui ativar: ' + e.message); }
+}
+
+/* ---------------- Avisos no Hoje ---------------- */
+function avisosHoje() {
+  let s = '';
+  const d = diaInfo(hoje());
+  if (d.peso == null) {
+    s += `<div class="card aviso"><div class="row between"><p class="eyebrow">Peso de hoje</p><span class="chip pink">pendente</span></div>
+      <div class="qtyrow peso-rapido"><input id="q-peso" inputmode="decimal" placeholder="ex.: 68,4" aria-label="Peso de hoje em kg"><button class="btn primary" data-a="salvarPesoRapido" type="button">Salvar kg</button></div></div>`;
+  }
+  const u = aplicacoes()[0];
+  const sexta = new Date().getDay() === 5;
+  const atrasada = u && diasEntre(u.data, hoje()) >= 7;
+  if ((sexta && (!u || diasEntre(u.data, hoje()) >= 5)) || atrasada) {
+    s += `<button class="card aviso mj tile-link" data-a="irAba" data-tab="mounjaro" type="button"><p class="eyebrow">Mounjaro</p>
+      <strong>${sexta ? 'Hoje é dia da aplicação' : 'Aplicação pendente'}${u ? ` · última ${fmt1(u.dose)} mg em ${ddmm(u.data)}` : ''}</strong><span class="hint">Toque para registrar</span></button>`;
+  }
+  return s;
+}
+
+Object.assign(ACOES, {
+  conectarStrava() { conectarStrava(); },
+  syncStrava() { sincronizarStrava(true).then(() => { if (!$('#sheet').hidden) abrirPerfil(); }); },
+  desconectarStrava(b) {
+    if (!armar(b, 'Toque de novo para desconectar')) return;
+    store.del('config', 'strava'); S.atividades.slice().forEach(a => store.del('atividades', a.id));
+    abrirPerfil(); render(); toast('Strava desconectado.');
+  },
+  ativarPush() { ativarPush(); },
+  async testarPush() {
+    try { const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); if (!sub) { lsSet('af:pushOn', false); abrirPerfil(); return; } await postJSON('/push/test', { endpoint: sub.endpoint }); toast('Teste enviado. Deve chegar em segundos.'); }
+    catch (e) { toast('Falhou: ' + e.message); }
+  },
+  salvarPesoRapido() {
+    const v = num($('#q-peso').value);
+    if (!v || v < 25 || v > 300) { toast('Digite o peso em kg, ex.: 68,4'); $('#q-peso').focus(); return; }
+    const d = diaDe(hoje()) || { id: hoje() };
+    store.put('diario', { ...d, peso: v }); render(); toast(`${fmt1(v)} kg registrado.`);
+  }
+});
+
+async function changeLembretes(t) {
+  if (t.id !== 'lb-peso' && t.id !== 'lb-mj') return false;
+  salvarCfg({ lembretes: { ...prefsLembrete(), [t.id === 'lb-peso' ? 'peso' : 'mounjaro']: t.checked } });
+  if (lsGet('af:pushOn', false) && servidorOk()) { try { await inscreverPush(); } catch (e) { } }
+  toast('Lembrete atualizado.');
+  return true;
+}
+
+window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (VIEWS[h] && !$('#app').hidden) { aba = h; render(true); } });
+document.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.id === 'q-peso') ACOES.salvarPesoRapido(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !$('#app').hidden) sincronizarStrava(false); });
+
+/* =====================================================================
+   DEMONSTRAÇÕES — figura animada (vista lateral) por padrão de movimento.
+   Ângulos em graus a partir da vertical para baixo; positivo = para a
+   frente (direita). Tronco: a partir da vertical para cima.
+   ===================================================================== */
+const G = 92;                                   // linha do chão
+const LEN = { t: 30, ua: 15, fa: 14, th: 21, sh: 21, hd: 6 };
+const rad = (a) => a * Math.PI / 180;
+const vec = (a, l) => [Math.sin(rad(a)) * l, Math.cos(rad(a)) * l];
+const soma = (p, d) => [p[0] + d[0], p[1] + d[1]];
+const P = (p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`;
+
+const eq = {
+  banco: (x1, x2, y) => `<line class="eq" x1="${x1}" x2="${x2}" y1="${y}" y2="${y}"/><line class="eq thin" x1="${x1 + 4}" x2="${x1 + 4}" y1="${y}" y2="${G}"/><line class="eq thin" x1="${x2 - 4}" x2="${x2 - 4}" y1="${y}" y2="${G}"/>`,
+  polia: (x, y) => `<circle class="eq thin" cx="${x}" cy="${y}" r="3"/>`,
+  halter: (h) => `<rect class="peso" x="${(h[0] - 5).toFixed(1)}" y="${(h[1] - 2.2).toFixed(1)}" width="10" height="4.4" rx="1.6"/>`,
+  barra: (h) => `<circle class="peso" cx="${h[0].toFixed(1)}" cy="${h[1].toFixed(1)}" r="5"/><circle class="peso-in" cx="${h[0].toFixed(1)}" cy="${h[1].toFixed(1)}" r="1.4"/>`,
+  cabo: (a, b) => `<line class="cabo" x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}"/>`,
+  rolo: (p) => `<circle class="peso" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.2"/>`
+};
+
+const PADROES = {
+  agachamento: {
+    A: { foot: 92, t: 4, th: 0, sh: 0, ua: 10, fa: 170 }, B: { foot: 92, t: 38, th: 85, sh: -28, ua: 25, fa: 170 },
+    dyn: J => eq.halter(J.hand),
+    dicas: ['Pés na largura dos ombros, pontas levemente para fora', 'Desça levando o quadril para trás, joelhos na direção dos pés', 'Coluna neutra e calcanhares no chão o tempo todo']
+  },
+  legpress: {
+    A: { hip: [62, 66], t: -50, th: 118, sh: 118, ua: 20, fa: 60 }, B: { hip: [62, 66], t: -50, th: 155, sh: 100, ua: 20, fa: 60 },
+    est: `<line class="eq" x1="32" y1="42" x2="58" y2="74"/><line class="eq" x1="58" y1="74" x2="80" y2="74"/><line class="eq thin" x1="70" y1="74" x2="70" y2="${G}"/><line class="eq thin" x1="88" y1="70" x2="150" y2="14"/>`,
+    dyn: J => `<line class="eq" x1="${(J.ankle[0] - 7).toFixed(1)}" y1="${(J.ankle[1] - 9).toFixed(1)}" x2="${(J.ankle[0] + 7).toFixed(1)}" y2="${(J.ankle[1] + 9).toFixed(1)}"/>`,
+    dicas: ['Lombar e quadril sempre apoiados no encosto', 'Desça até os joelhos formarem cerca de 90°', 'Empurre com o pé inteiro, sem travar os joelhos no final']
+  },
+  extensora: {
+    A: { hip: [64, 66], t: -8, th: 90, sh: 2, ua: 15, fa: 70 }, B: { hip: [64, 66], t: -8, th: 90, sh: 80, ua: 15, fa: 70 },
+    est: `<line class="eq" x1="48" y1="69" x2="86" y2="69"/><line class="eq" x1="48" y1="69" x2="44" y2="30"/><line class="eq thin" x1="66" y1="69" x2="66" y2="${G}"/>`,
+    dyn: J => eq.rolo(J.ankle),
+    dicas: ['Joelho alinhado ao eixo da máquina', 'Estenda as pernas sem tranco e segure 1 segundo em cima', 'Desça devagar, controlando o peso']
+  },
+  flexora: {
+    A: { hip: [80, 62], t: -90, th: 90, sh: 90, ua: 0, fa: -30 }, B: { hip: [80, 62], t: -90, th: 90, sh: 182, ua: 0, fa: -30 },
+    est: eq.banco(34, 112, 65.5),
+    dyn: J => eq.rolo([J.ankle[0], J.ankle[1] - 3]),
+    dicas: ['Quadril colado no banco durante todo o movimento', 'Flexione os joelhos levando o rolo em direção ao glúteo', 'Volte devagar, sem deixar o peso bater']
+  },
+  pelvica: {
+    A: { foot: 108, t: -90, th: 90, sh: 0, ua: 100, fa: 80 }, B: { foot: 108, t: -68, th: 125, sh: -5, ua: 118, fa: 92 },
+    est: eq.banco(28, 66, 75),
+    dyn: J => eq.barra(J.hand),
+    dicas: ['Escápulas apoiadas no banco e queixo levemente para baixo', 'Empurre o chão com os calcanhares até alinhar tronco e coxas', 'Contraia o glúteo 1 a 2 segundos no topo']
+  },
+  panturrilha: {
+    A: { foot: 80, t: 0, th: 0, sh: 0, ua: 0, fa: 0, rise: 0 }, B: { foot: 80, t: 0, th: 0, sh: 0, ua: 0, fa: 0, rise: 6 },
+    dyn: J => eq.halter(J.hand),
+    dicas: ['Suba o máximo que conseguir na ponta dos pés', 'Segure 1 segundo no alto', 'Desça devagar até alongar bem a panturrilha']
+  },
+  supino: {
+    A: { hip: [100, 64], t: -90, th: 70, sh: -10, ua: 180, fa: 180 }, B: { hip: [100, 64], t: -90, th: 70, sh: -10, ua: 20, fa: 160 },
+    est: eq.banco(52, 108, 67.5),
+    dyn: J => eq.barra(J.hand),
+    dicas: ['Escápulas encaixadas no banco e pés firmes no chão', 'Desça a carga até a linha do peito, cotovelos a uns 45° do corpo', 'Empurre para cima sem tirar o quadril do banco']
+  },
+  puxada: {
+    A: { hip: [78, 66], t: -12, th: 85, sh: 5, ua: 178, fa: 178 }, B: { hip: [78, 66], t: -12, th: 85, sh: 5, ua: -25, fa: 160 },
+    est: `<line class="eq" x1="62" y1="69" x2="92" y2="69"/><line class="eq thin" x1="78" y1="69" x2="78" y2="${G}"/><line class="eq" x1="94" y1="61" x2="106" y2="61"/>` + eq.polia(72, 3),
+    dyn: J => eq.cabo(J.hand, [72, 3]) + `<line class="eq" x1="${(J.hand[0] - 12).toFixed(1)}" y1="${J.hand[1].toFixed(1)}" x2="${(J.hand[0] + 12).toFixed(1)}" y2="${J.hand[1].toFixed(1)}"/>`,
+    dicas: ['Peito aberto e tronco levemente inclinado para trás', 'Puxe a barra até a altura do queixo, levando os cotovelos para baixo', 'Volte controlando até esticar os braços']
+  },
+  remada: {
+    A: { hip: [56, 82], t: -5, th: 80, sh: 85, ua: 85, fa: 88 }, B: { hip: [56, 82], t: -5, th: 80, sh: 85, ua: -35, fa: 80 },
+    est: `<line class="eq" x1="40" y1="85" x2="72" y2="85"/><line class="eq" x1="103" y1="70" x2="103" y2="${G}"/>` + eq.polia(150, 70),
+    dyn: J => eq.cabo(J.hand, [150, 70]),
+    dicas: ['Coluna reta, sem balançar o tronco', 'Puxe o pegador até o abdômen juntando as escápulas', 'Estique os braços de volta sem curvar as costas']
+  },
+  curvada: {
+    A: { foot: 90, t: 65, th: 20, sh: -8, ua: 0, fa: 0 }, B: { foot: 90, t: 65, th: 20, sh: -8, ua: -55, fa: 5 },
+    dyn: J => eq.barra(J.hand),
+    dicas: ['Tronco inclinado à frente com a coluna reta', 'Puxe a carga em direção ao umbigo, cotovelos rentes ao corpo', 'Desça devagar sem perder a postura']
+  },
+  desenvolvimento: {
+    A: { hip: [70, 66], t: -5, th: 88, sh: 0, ua: 30, fa: 175 }, B: { hip: [70, 66], t: -5, th: 88, sh: 0, ua: 175, fa: 178 },
+    est: `<line class="eq" x1="56" y1="69" x2="84" y2="69"/><line class="eq" x1="58" y1="69" x2="56" y2="30"/><line class="eq thin" x1="70" y1="69" x2="70" y2="${G}"/>`,
+    dyn: J => eq.halter(J.hand),
+    dicas: ['Costas apoiadas e abdômen firme', 'Empurre os halteres para cima até quase estender os cotovelos', 'Desça até a altura das orelhas sem arquear a lombar']
+  },
+  frontal: {
+    A: { foot: 84, t: 0, th: 0, sh: 0, ua: 5, fa: 5 }, B: { foot: 84, t: 0, th: 0, sh: 0, ua: 90, fa: 92 },
+    dyn: J => eq.halter(J.hand),
+    dicas: ['Cotovelos levemente flexionados', 'Eleve os braços à frente até a altura dos ombros', 'Desça devagar, sem balançar o corpo']
+  },
+  triceps: {
+    A: { foot: 86, t: 10, th: 3, sh: 0, ua: 5, fa: 160 }, B: { foot: 86, t: 10, th: 3, sh: 0, ua: 5, fa: 5 },
+    est: eq.polia(100, 3),
+    dyn: J => eq.cabo(J.hand, [100, 3]) + `<line class="eq" x1="${(J.hand[0] - 5).toFixed(1)}" y1="${J.hand[1].toFixed(1)}" x2="${(J.hand[0] + 5).toFixed(1)}" y2="${J.hand[1].toFixed(1)}"/>`,
+    dicas: ['Cotovelos colados ao corpo e parados', 'Estenda os braços até o fim, empurrando para baixo', 'Suba devagar só até uns 90° no cotovelo']
+  },
+  rosca: {
+    A: { foot: 84, t: 0, th: 0, sh: 0, ua: 3, fa: 5 }, B: { foot: 84, t: 0, th: 0, sh: 0, ua: 3, fa: 150 },
+    dyn: J => eq.barra(J.hand),
+    dicas: ['Cotovelos fixos ao lado do corpo', 'Suba a carga contraindo o bíceps, sem balançar o tronco', 'Desça devagar até quase estender os braços']
+  },
+  stiff: {
+    A: { foot: 86, t: 0, th: 2, sh: 0, ua: 0, fa: 0 }, B: { foot: 86, t: 75, th: 15, sh: -3, ua: 0, fa: 0 },
+    dyn: J => eq.barra(J.hand),
+    dicas: ['Joelhos levemente flexionados e fixos', 'Leve o quadril para trás descendo a barra rente às pernas', 'Coluna reta o tempo todo; suba contraindo glúteo e posterior']
+  },
+  bulgaro: {
+    A: { foot: 80, t: 8, th: 8, sh: 0, th2: -25, sh2: -95, ua: 0, fa: 0 }, B: { foot: 80, t: 12, th: 78, sh: -18, th2: 5, sh2: -146, ua: 0, fa: 0 },
+    est: eq.banco(30, 58, 72.5),
+    dyn: J => eq.halter(J.hand),
+    dicas: ['Pé de trás apoiado no banco e tronco levemente à frente', 'Desça até a coxa da frente ficar quase paralela ao chão', 'Suba empurrando com o calcanhar da perna da frente']
+  },
+  gluteo: {
+    A: { foot: 84, t: 25, th: 0, sh: 0, th2: 5, sh2: 5, ua: 70, fa: 80 }, B: { foot: 84, t: 25, th: 0, sh: 0, th2: -50, sh2: -40, ua: 70, fa: 80 },
+    est: `<line class="eq" x1="118" y1="20" x2="118" y2="${G}"/>` + eq.polia(116, 88),
+    dyn: J => eq.cabo(J.ankle2, [116, 88]),
+    dicas: ['Tronco firme e levemente inclinado à frente', 'Leve a perna para trás contraindo o glúteo, sem arquear a lombar', 'Volte devagar até perto da posição inicial']
+  },
+  prancha: {
+    A: { hip: [92, 83.2], t: -78, th: 78, sh: 78, ua: 0, fa: -90 }, B: { hip: [92, 82.4], t: -77, th: 78.5, sh: 78.5, ua: 0, fa: -90 },
+    dyn: () => `<text class="demo-lbl" x="80" y="20" text-anchor="middle">segure a posição</text>`,
+    dicas: ['Cotovelos logo abaixo dos ombros', 'Corpo em linha reta da cabeça aos calcanhares', 'Contraia abdômen e glúteos, sem deixar o quadril cair']
+  },
+  abdominal: {
+    A: { hip: [80, 86], t: -90, th: 140, sh: -5, ua: 100, fa: -80 }, B: { hip: [80, 86], t: -62, th: 140, sh: -5, ua: 125, fa: -55 },
+    dicas: ['Joelhos dobrados e pés apoiados no chão', 'Suba o tronco contraindo o abdômen, sem puxar o pescoço', 'Desça devagar sem relaxar totalmente']
+  },
+  // vistas de frente
+  lateral: {
+    front: true, A: { a: 8 }, B: { a: 85 },
+    render: (p) => frente({ braco: p.a }),
+    dicas: ['Cotovelos levemente flexionados', 'Eleve os braços pelas laterais até a altura dos ombros', 'Desça devagar, sem usar impulso do corpo']
+  },
+  abdutora: {
+    front: true, A: { d: 2 }, B: { d: 15 },
+    render: (p) => frente({ sentada: true, abre: p.d }),
+    dicas: ['Costas apoiadas e quadril encaixado no banco', 'Abra as pernas empurrando com a parte de fora das coxas', 'Volte devagar, sem deixar o peso bater']
+  }
+};
+
+function frente(o) {
+  const cx = 80; let s = `<line class="chao" x1="4" x2="156" y1="${G}" y2="${G}"/>`;
+  if (o.sentada) {
+    const hy = 64;
+    s += `<rect class="eq" x="62" y="${hy + 3}" width="36" height="5" rx="2"/><line class="eq thin" x1="80" y1="${hy + 8}" x2="80" y2="${G}"/><line class="eq" x1="64" y1="${hy}" x2="64" y2="28"/><line class="eq" x1="96" y1="${hy}" x2="96" y2="28"/>`;
+    [-1, 1].forEach(sd => {
+      const kx = cx + sd * (6 + o.abre), ky = hy + 6;
+      s += `<polyline class="fig" points="${cx + sd * 5},${hy} ${kx.toFixed(1)},${ky} ${(kx + sd * 1).toFixed(1)},${G - 2} ${(kx + sd * 5).toFixed(1)},${G - 2}"/>`;
+      s += eq.rolo([kx + sd * 4, ky - 1]);
+      s += `<polyline class="fig" points="${cx + sd * 8},${hy - 26} ${cx + sd * 13},${hy - 12} ${cx + sd * 16},${hy - 2}"/>`;
+    });
+    s += `<line class="fig" x1="${cx}" y1="${hy}" x2="${cx}" y2="${hy - 28}"/><line class="fig" x1="${cx - 8}" y1="${hy - 26}" x2="${cx + 8}" y2="${hy - 26}"/><circle class="cabeca" cx="${cx}" cy="${hy - 36}" r="${LEN.hd}"/>`;
+    return s;
+  }
+  const hy = 50, sy = 22;
+  [-1, 1].forEach(sd => {
+    s += `<polyline class="fig" points="${cx + sd * 4},${hy} ${cx + sd * 6},${hy + 21} ${cx + sd * 7},${G}"/>`;
+    const sh = [cx + sd * 9, sy + 2];
+    const el = soma(sh, [Math.sin(rad(o.braco)) * 15 * sd, Math.cos(rad(o.braco)) * 15]);
+    const hd = soma(el, [Math.sin(rad(o.braco + 8)) * 14 * sd, Math.cos(rad(o.braco + 8)) * 14]);
+    s += `<polyline class="fig" points="${P(sh)} ${P(el)} ${P(hd)}"/>` + eq.halter(hd);
+  });
+  s += `<line class="fig" x1="${cx}" y1="${hy}" x2="${cx}" y2="${sy}"/><line class="fig" x1="${cx - 9}" y1="${sy + 2}" x2="${cx + 9}" y2="${sy + 2}"/><line class="fig" x1="${cx - 4}" y1="${hy}" x2="${cx + 4}" y2="${hy}"/><circle class="cabeca" cx="${cx}" cy="${sy - 8}" r="${LEN.hd}"/>`;
+  return s;
+}
+
+const MAPA_PADROES = [
+  [/flexora|flexao de joelho|leg curl/, 'flexora'], [/extensora/, 'extensora'], [/abdutora|abducao|adutora|aducao/, 'abdutora'],
+  [/leg ?press|leg 45/, 'legpress'], [/bulgaro|afundo|avanco|passada|lunge/, 'bulgaro'], [/pelvica|hip thrust|ponte/, 'pelvica'],
+  [/panturrilha|gemeos/, 'panturrilha'], [/stiff|terra|good morning|rdl/, 'stiff'], [/agacha|sumo|hack|smith/, 'agachamento'],
+  [/supino|crucifixo|peck|fly|voador/, 'supino'], [/puxada|pulldown|barra fixa|pull ?down/, 'puxada'],
+  [/remada (curvada|unilateral|cavalinho)|serrote|curvada/, 'curvada'], [/remada/, 'remada'],
+  [/desenvolvimento|militar|arnold|press de ombro/, 'desenvolvimento'], [/lateral/, 'lateral'], [/frontal/, 'frontal'],
+  [/triceps|testa|frances|pulley/, 'triceps'], [/rosca|biceps|martelo/, 'rosca'], [/gluteo|coice|kickback/, 'gluteo'],
+  [/prancha|plank/, 'prancha'], [/abdominal|abdomen|crunch|infra/, 'abdominal']
+];
+const padraoDe = (nome) => { const n = normTxt(nome); const m = MAPA_PADROES.find(([re]) => re.test(n)); return m ? m[1] : null; };
+
+function juntas(p) {
+  let hip;
+  const rise = p.rise || 0;
+  if (p.foot != null) {
+    const k = vec(p.th, LEN.th), a = vec(p.sh, LEN.sh);
+    hip = [p.foot - k[0] - a[0], G - rise - k[1] - a[1]];
+  } else hip = p.hip;
+  const neck = soma(hip, [Math.sin(rad(p.t)) * LEN.t, -Math.cos(rad(p.t)) * LEN.t]);
+  const head = soma(neck, [Math.sin(rad(p.t)) * (LEN.hd + 1.5), -Math.cos(rad(p.t)) * (LEN.hd + 1.5)]);
+  const elbow = soma(neck, vec(p.ua, LEN.ua)), hand = soma(elbow, vec(p.fa, LEN.fa));
+  const knee = soma(hip, vec(p.th, LEN.th)), ankle = soma(knee, vec(p.sh, LEN.sh));
+  const toe = p.foot != null ? [ankle[0] + 6, G] : soma(ankle, vec(p.sh + 90, 5));
+  const J = { hip, neck, head, elbow, hand, knee, ankle, toe };
+  if (p.th2 != null) { J.knee2 = soma(hip, vec(p.th2, LEN.th)); J.ankle2 = soma(J.knee2, vec(p.sh2, LEN.sh)); J.toe2 = soma(J.ankle2, vec(p.sh2 + 90, 5)); }
+  return J;
+}
+function desenhar(pd, p) {
+  if (pd.front) return pd.render(p);
+  const J = juntas(p);
+  let s = `<line class="chao" x1="4" x2="156" y1="${G}" y2="${G}"/>` + (pd.est || '');
+  if (J.knee2) s += `<polyline class="fig f2" points="${P(J.hip)} ${P(J.knee2)} ${P(J.ankle2)} ${P(J.toe2)}"/>`;
+  s += `<polyline class="fig" points="${P(J.hip)} ${P(J.knee)} ${P(J.ankle)} ${P(J.toe)}"/>`;
+  s += `<line class="fig" x1="${J.hip[0].toFixed(1)}" y1="${J.hip[1].toFixed(1)}" x2="${J.neck[0].toFixed(1)}" y2="${J.neck[1].toFixed(1)}"/>`;
+  s += `<circle class="cabeca" cx="${J.head[0].toFixed(1)}" cy="${J.head[1].toFixed(1)}" r="${LEN.hd}"/>`;
+  s += `<polyline class="fig" points="${P(J.neck)} ${P(J.elbow)} ${P(J.hand)}"/>`;
+  if (pd.dyn) s += pd.dyn(J);
+  return s;
+}
+function interp(A, B, k) {
+  const o = {};
+  for (const key in A) {
+    const a = A[key], b = B[key] ?? a;
+    o[key] = Array.isArray(a) ? a.map((v, i) => v + (b[i] - v) * k) : (typeof a === 'number' ? a + (b - a) * k : a);
+  }
+  return o;
+}
+
+const mostrarDemos = () => lsGet('af:demos', true) !== false;
+function demoHTML(nome) {
+  const pad = padraoDe(nome);
+  const busca = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(nome + ' execução correta');
+  if (!pad) {
+    return `<div class="demo nodemo"><p class="hint">Sem animação para este exercício.</p><a class="video" href="${busca}" target="_blank" rel="noopener">Ver vídeo da execução ↗</a></div>`;
+  }
+  const pd = PADROES[pad];
+  return `<div class="demo">
+    <svg class="demo-svg" viewBox="0 0 160 100" data-pad="${pad}" role="img" aria-label="Demonstração de ${esc(nome)}">${desenhar(pd, pd.A)}</svg>
+    <ul class="dicas">${pd.dicas.map(d => `<li>${esc(d)}</li>`).join('')}</ul>
+    <a class="video" href="${busca}" target="_blank" rel="noopener">Ver vídeo da execução ↗</a>
+  </div>`;
+}
+
+// laço de animação: só anima as figuras visíveis na tela
+const reduzMov = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+let ultimoQuadro = 0;
+function animarDemos(ts) {
+  requestAnimationFrame(animarDemos);
+  if (ts - ultimoQuadro < 33) return; ultimoQuadro = ts;
+  const svgs = document.querySelectorAll('.demo-svg'); if (!svgs.length) return;
+  const H = window.innerHeight;
+  // ciclo de 2,6 s: desce/volta com pausa curta em cada ponta
+  const fase = (ts % 2600) / 2600;
+  const tri = fase < 0.5 ? fase * 2 : 2 - fase * 2;
+  const k = reduzMov ? 0.5 : (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, (tri - 0.08) / 0.84)))) / 2;
+  svgs.forEach(svg => {
+    const r = svg.getBoundingClientRect(); if (r.bottom < 0 || r.top > H) return;
+    const pd = PADROES[svg.dataset.pad]; if (!pd) return;
+    svg.innerHTML = desenhar(pd, interp(pd.A, pd.B, k));
+  });
+}
+requestAnimationFrame(animarDemos);
+
+Object.assign(ACOES, {
+  toggleDemos() { lsSet('af:demos', !mostrarDemos()); render(); }
+});
+
+/* ganchos de eventos usados pelo app principal */
+function extraInput(t) { return inputAlimento(t); }
+function extraChange(t) {
+  if (t.id === 'imp-file') { changeImport(t); return true; }
+  if (t.id === 'lb-peso' || t.id === 'lb-mj') { changeLembretes(t); return true; }
+  return changeAlimento(t);
+}
+
+if ('serviceWorker' in navigator && location.protocol === 'https:' && window.top === window && !/claude/.test(location.hostname)) {
+  navigator.serviceWorker.register('sw.js').catch(() => { });
+}
+iniciarApp();
+
+</script>
+</body>
+</html>
