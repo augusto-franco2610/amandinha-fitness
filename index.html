@@ -351,6 +351,8 @@ textarea { min-height: 70px; resize: vertical; }
 
 /* ---------- Demonstrações ---------- */
 .demo { display: flex; flex-direction: column; gap: 8px; margin: -6px -6px 0; }
+.demo-gif { width: 100%; max-width: 360px; aspect-ratio: 1; object-fit: contain; align-self: center; background: #fff; border-radius: 16px; display: block; }
+.demo-gif ~ .demo-svg { display: none; }
 .demo-svg { width: 100%; height: 150px; background: var(--surface2); border-radius: 14px; display: block; }
 .demo-svg .fig { fill: none; stroke: var(--fg); stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
 .demo-svg .fig.f2 { opacity: .4; }
@@ -673,7 +675,7 @@ const FIREBASE_CONFIG = {
 const EMAILS_PERMITIDOS = [];
 // Nome do atalho no app Atalhos do iPhone que grava no Apple Saúde.
 const NOME_ATALHO = "Amandinha Saúde";
-const APP_VERSAO = "22/10 · cardio, macros e músculos";
+const APP_VERSAO = "22/10 · demonstrações em GIF";
 // Endereço do servidor (Cloudflare Worker) que cuida do Strava e das notificações. Ex.: "https://amandinha-fitness.seu-usuario.workers.dev"
 const WORKER_URL = "";
 // Client ID do app criado em strava.com/settings/api (é público, pode ficar aqui).
@@ -3063,6 +3065,8 @@ function interp(A, B, k) {
   return o;
 }
 
+// GIFs (pasta demos/): mesmo nome do padrão; "supino inclinado" tem o seu próprio
+const padGif = (nome, pad) => (pad === 'supino' && /inclinad/.test(normTxt(nome))) ? 'supino_inclinado' : pad;
 const mostrarDemos = () => lsGet('af:demos', true) !== false;
 function demoHTML(nome) {
   const pad = padraoDe(nome);
@@ -3072,6 +3076,7 @@ function demoHTML(nome) {
   }
   const pd = PADROES[pad];
   return `<div class="demo">
+    <img class="demo-gif" src="demos/${padGif(nome, pad)}.gif" alt="Demonstração de ${esc(nome)}" loading="lazy" onerror="this.remove()">
     <svg class="demo-svg" viewBox="0 0 160 100" data-pad="${pad}" role="img" aria-label="Demonstração de ${esc(nome)}">${desenhar(pd, pd.A, pad)}</svg>
     ${MUSCULOS[pad] ? `<p class="musc-tags"><span class="hint">Trabalha:</span>${MUSCULOS[pad].nomes.map(m => `<span class="musc">${esc(m)}</span>`).join('')}</p>` : ''}
     <ul class="dicas">${pd.dicas.map(d => `<li>${esc(d)}</li>`).join('')}</ul>
