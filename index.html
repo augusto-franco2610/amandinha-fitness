@@ -560,6 +560,27 @@ input:focus, select:focus, textarea:focus { background-color: var(--field); }
 .tipo-chip { align-self: flex-start; padding: 8px 12px; }
 .semana-atual { font-size: 1.0625rem; font-weight: 600; padding: 12px 0; }
 
+/* ---------- Macros ---------- */
+:root { --prot: #0071e3; --carb: #ff9500; --gord: #af52de; }
+.macros { display: flex; flex-direction: column; gap: 12px; }
+.macro { display: flex; flex-direction: column; gap: 6px; font-size: .9375rem; }
+.macro b { font-weight: 600; }
+.bar.prot b { background: var(--prot); }
+.bar.carb b { background: var(--carb); }
+.bar.gord b { background: var(--gord); }
+.bar.over b { background: var(--amber); }
+.macros-mini { display: flex; gap: 14px; flex-wrap: wrap; font-size: .8125rem; color: var(--muted); }
+.macros-mini b { color: var(--fg); font-weight: 600; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
+.dot.prot { background: var(--prot); } .dot.carb { background: var(--carb); } .dot.gord { background: var(--gord); }
+.macro-sel { display: flex; gap: 6px; flex-wrap: wrap; }
+.mchip { font-size: .8125rem; background: var(--surface); border-radius: 999px; padding: 4px 10px; color: var(--muted); border: 1px solid var(--line); }
+.mchip b { color: var(--fg); font-weight: 600; }
+.mchip.prot { border-color: color-mix(in srgb, var(--prot) 35%, transparent); }
+.mchip.carb { border-color: color-mix(in srgb, var(--carb) 40%, transparent); }
+.mchip.gord { border-color: color-mix(in srgb, var(--gord) 35%, transparent); }
+.meal-tot { padding-top: 2px; }
+
 </style>
 </head>
 <body>
@@ -730,10 +751,10 @@ function semearDemo() {
     const d = { id: iso, gastas: Math.round(1900 + rnd() * 500) };
     if (i % 2 === 0 || i < 3) d.peso = Math.round((74.6 - (20 - i) * 0.13 + (rnd() - 0.5) * 0.5) * 10) / 10;
     if (i < 14) d.refeicoes = [
-      { tipo: 'Café da manhã', desc: 'Iogurte natural com granola', kcal: Math.round(260 + rnd() * 80) },
-      { tipo: 'Almoço', desc: 'Arroz, feijão, frango grelhado e salada', kcal: Math.round(520 + rnd() * 120) },
-      { tipo: 'Lanche da tarde', desc: 'Whey com banana', kcal: Math.round(220 + rnd() * 60) },
-      ...(i === 0 ? [] : [{ tipo: 'Jantar', desc: 'Omelete com legumes', kcal: Math.round(380 + rnd() * 100) }])
+      { tipo: 'Café da manhã', desc: 'Iogurte natural com granola', kcal: Math.round(260 + rnd() * 80), p: 12, c: 38, g: 9 },
+      { tipo: 'Almoço', desc: 'Arroz, feijão, frango grelhado e salada', kcal: Math.round(520 + rnd() * 120), p: 42, c: 62, g: 10 },
+      { tipo: 'Lanche da tarde', desc: 'Whey com banana', kcal: Math.round(220 + rnd() * 60), p: 25, c: 28, g: 2 },
+      ...(i === 0 ? [] : [{ tipo: 'Jantar', desc: 'Omelete com legumes', kcal: Math.round(380 + rnd() * 100), p: 24, c: 10, g: 26 }])
     ];
     store.put('diario', d);
   }
@@ -921,6 +942,7 @@ const VIEWS = {
           <div><span class="hint">Saldo</span><strong>${fmt(d.consumidas - d.gastas)}</strong></div>
         </div>
         ${meta ? `<div class="bar ${d.consumidas > meta ? 'over' : ''}"><b style="width:${pct.toFixed(0)}%"></b></div>` : ''}
+        ${macrosDiaHTML(d.refeicoes, true)}
       </button>
       <div class="card">
         <div class="row between"><p class="eyebrow">Esta semana</p><span class="chip pink">${nSemana} treino${nSemana === 1 ? '' : 's'}</span></div>
@@ -965,8 +987,10 @@ const VIEWS = {
       const itens = (d.refeicoes || []).map((r, i) => ({ ...r, i })).filter(r => r.tipo === tipo);
       if (!itens.length) return '';
       const tot = itens.reduce((s, r) => s + (num(r.kcal) || 0), 0);
+      const mt = macrosRefeicoes(itens);
       return `<div class="meal"><h3>${tipo}<span>${fmt(tot)} kcal</span></h3>
-        ${itens.map(r => `<div class="item"><span>${esc(r.desc)}</span><span class="k">${fmt(num(r.kcal))}</span><button class="x" data-a="delRefeicao" data-i="${r.i}" type="button" aria-label="Remover ${esc(r.desc)}">×</button></div>`).join('')}
+        ${itens.map(r => `<div class="item"><span>${esc(r.desc)}${r.p != null ? `<br><span class="hint num">${macroTxt(r)}</span>` : ''}</span><span class="k">${fmt(num(r.kcal))}</span><button class="x" data-a="delRefeicao" data-i="${r.i}" type="button" aria-label="Remover ${esc(r.desc)}">×</button></div>`).join('')}
+        ${itens.length > 1 ? `<p class="hint num meal-tot">Total: ${macroTxt(mt)}</p>` : ''}
       </div>`;
     }).join('');
     const pct = meta ? Math.min(100, d.consumidas / meta * 100) : 0;
@@ -992,6 +1016,10 @@ const VIEWS = {
           <div><span class="hint">Saldo</span><strong>${fmt(d.consumidas - d.gastas)}</strong></div>
         </div>
         ${meta ? `<div class="bar ${d.consumidas > meta ? 'over' : ''}"><b style="width:${pct.toFixed(0)}%"></b></div><p class="hint">${fmt(d.consumidas)} de ${fmt(meta)} kcal da meta</p>` : '<p class="hint">Complete altura, nascimento e peso nos ajustes (toque no A lá em cima) para o app calcular sua meta.</p>'}
+      </div>
+      <div class="card">
+        <p class="eyebrow">Macros do dia</p>
+        ${macrosDiaHTML(d.refeicoes)}
       </div>
       <h2 class="sec">Alimentação</h2>
       <div class="card">
@@ -1523,6 +1551,17 @@ function metaCalc() {
   };
 }
 const metaDiaria = () => metaCalc().meta || null;
+// Metas de macros para perda de peso preservando músculo:
+// proteína 1,6 g por kg (do peso-meta, ou do peso atual se não houver meta e ele for menor),
+// gordura 25% das calorias, carboidratos com o restante.
+function metaMacros() {
+  const m = metaCalc(); if (!m.meta) return null;
+  const ref = num(cfg().metaPeso) || m.peso;
+  const p = Math.round(1.6 * Math.min(ref, m.peso));
+  const g = Math.round(m.meta * 0.25 / 9);
+  const c = Math.max(50, Math.round((m.meta - p * 4 - g * 9) / 4));
+  return { p, c, g };
+}
 
 function metaCalcHTML() {
   const m = metaCalc();
@@ -1535,6 +1574,7 @@ function metaCalcHTML() {
         <p><span>Gasto estimado do dia</span><b>${fmt(m.gasto)} kcal</b></p>
         <p><span>Déficit para perder peso</span><b>−${fmt(m.deficit)} kcal</b></p>
         <p><span>Perda esperada</span><b>~${fmt1(m.kgSemana)} kg/semana</b></p>
+        ${(() => { const mm = metaMacros(); return mm ? `<p><span>Proteína · Carbo · Gordura</span><b>${mm.p} · ${mm.c} · ${mm.g} g</b></p>` : ''; })()}
       </div>
     </div>
     <p class="hint">Calculada com seu último peso (${fmt1(m.peso)} kg), ${m.idade} anos e ${fmt(m.altura)} cm. Atualiza sozinha a cada novo peso.${m.limitado ? ' O ritmo foi reduzido para a meta não ficar abaixo da sua taxa basal.' : ''}${mp && m.peso <= mp ? ' Você atingiu a meta de peso: vale combinar com o médico ou a nutricionista os próximos passos.' : ''}</p>`;
@@ -1556,7 +1596,7 @@ function cardMeta() {
     <div class="field"><label for="p-ativ">Nível de atividade</label><select id="p-ativ" data-p="atividade">${opt(ATIVIDADES, p.atividade || '1.375')}</select></div>
     <div class="field"><label for="p-ritmo">Ritmo de perda</label><select id="p-ritmo" data-p="ritmo">${opt(RITMOS, p.ritmo || '500')}</select></div>
     <div id="meta-calc">${metaCalcHTML()}</div>
-    <p class="disclaimer">Estimativa pela fórmula de Mifflin-St Jeor. Com Mounjaro o apetite costuma cair: evite ficar muito abaixo da meta e priorize proteína. Ajustes de dieta devem seguir a orientação do médico ou da nutricionista.</p>
+    <p class="disclaimer">Estimativa pela fórmula de Mifflin-St Jeor. Macros: proteína de 1,6 g por kg do peso-meta, gordura em 25% das calorias e carboidratos com o restante. Com Mounjaro o apetite costuma cair: evite ficar muito abaixo da meta e priorize proteína. Ajustes de dieta devem seguir a orientação do médico ou da nutricionista.</p>
   </div>`;
 }
 
@@ -1723,10 +1763,124 @@ function cardPlano() {
 }
 
 /* =====================================================================
-   ALIMENTOS — calorias calculadas automaticamente
-   kcal por 100 g (ou 100 ml), valores aproximados das tabelas TACO
+   ALIMENTOS — calorias e macros calculados automaticamente
+   kcal e macros por 100 g (ou 100 ml), valores aproximados das tabelas TACO
    (Unicamp) e USDA. Porções em gramas.
    ===================================================================== */
+// proteína, carboidrato e gordura em gramas por 100 g (ou 100 ml)
+const MACROS100 = {
+  'Arroz branco cozido': [2.5, 28.1, 0.2],
+  'Arroz integral cozido': [2.6, 25.8, 1.0],
+  'Feijão carioca cozido': [4.8, 13.6, 0.5],
+  'Feijão preto cozido': [4.5, 14.0, 0.5],
+  'Feijoada': [8.7, 11.6, 6.5],
+  'Lentilha cozida': [6.3, 16.3, 0.5],
+  'Grão-de-bico cozido': [8.9, 27.4, 2.6],
+  'Macarrão cozido': [5.8, 30.9, 0.9],
+  'Pão francês': [8.0, 58.6, 3.1],
+  'Pão de forma': [7.5, 49.9, 2.7],
+  'Pão de forma integral': [9.4, 49.9, 3.7],
+  'Pão de queijo': [5.1, 34.2, 24.6],
+  'Tapioca (goma hidratada)': [0.5, 59.0, 0.1],
+  'Cuscuz de milho cozido': [2.2, 25.3, 0.7],
+  'Aveia em flocos': [13.9, 66.6, 8.5],
+  'Granola': [10.0, 64.0, 15.0],
+  'Biscoito de arroz': [8.0, 81.0, 3.0],
+  'Torrada': [11.0, 74.0, 6.0],
+  'Farofa pronta': [2.1, 80.3, 9.1],
+  'Batata inglesa cozida': [1.2, 11.9, 0.0],
+  'Batata doce cozida': [0.6, 18.4, 0.1],
+  'Batata frita': [5.0, 35.0, 13.0],
+  'Purê de batata': [1.8, 13.0, 3.5],
+  'Mandioca cozida': [0.6, 30.1, 0.3],
+  'Inhame cozido': [2.1, 23.2, 0.1],
+  'Milho verde': [3.3, 19.0, 1.4],
+  'Pizza de mussarela': [11.0, 30.0, 11.0],
+  'Peito de frango grelhado': [32.0, 0.0, 2.5],
+  'Frango desfiado': [32.8, 0.0, 3.2],
+  'Coxa de frango assada': [26.0, 0.0, 12.0],
+  'Ovo cozido': [13.3, 0.6, 9.5],
+  'Ovo frito': [15.6, 1.2, 18.6],
+  'Ovo mexido': [11.0, 1.6, 12.5],
+  'Omelete': [10.6, 0.7, 12.0],
+  'Clara de ovo': [10.9, 0.7, 0.2],
+  'Patinho grelhado': [35.9, 0.0, 7.3],
+  'Alcatra grelhada': [31.9, 0.0, 11.6],
+  'Picanha grelhada': [26.4, 0.0, 20.4],
+  'Carne moída refogada': [26.7, 0.0, 10.9],
+  'Lombo de porco assado': [35.7, 0.0, 6.4],
+  'Linguiça grelhada': [18.4, 0.0, 24.5],
+  'Filé de tilápia grelhado': [26.0, 0.0, 2.7],
+  'Salmão grelhado': [23.9, 0.0, 14.8],
+  'Atum em lata (em água)': [26.0, 0.0, 0.8],
+  'Sardinha em lata': [22.0, 0.0, 22.0],
+  'Camarão cozido': [19.0, 0.5, 1.0],
+  'Presunto': [14.3, 2.1, 2.7],
+  'Peito de peru': [15.0, 2.0, 4.0],
+  'Tofu': [6.6, 2.1, 4.0],
+  'Whey protein': [80.0, 8.0, 6.0],
+  'Leite integral': [3.2, 4.7, 3.3],
+  'Leite desnatado': [3.4, 4.9, 0.2],
+  'Iogurte natural': [4.1, 1.9, 3.0],
+  'Iogurte grego natural': [5.0, 4.0, 7.0],
+  'Queijo minas frescal': [17.4, 3.2, 20.2],
+  'Queijo mussarela': [22.6, 3.0, 25.2],
+  'Queijo parmesão': [35.6, 1.7, 33.5],
+  'Queijo cottage': [11.1, 3.4, 4.5],
+  'Requeijão': [9.6, 2.4, 23.4],
+  'Manteiga': [0.4, 0.1, 82.4],
+  'Creme de leite': [1.5, 4.5, 22.5],
+  'Leite condensado': [7.7, 57.0, 6.7],
+  'Banana prata': [1.3, 26.0, 0.1],
+  'Banana nanica': [1.4, 23.8, 0.1],
+  'Maçã': [0.3, 15.2, 0.0],
+  'Pera': [0.6, 14.0, 0.1],
+  'Mamão papaia': [0.5, 10.4, 0.1],
+  'Morango': [0.9, 6.8, 0.3],
+  'Laranja': [1.0, 8.9, 0.1],
+  'Mexerica / tangerina': [0.8, 9.6, 0.1],
+  'Melancia': [0.9, 8.1, 0.0],
+  'Melão': [0.7, 7.5, 0.0],
+  'Abacaxi': [0.9, 12.3, 0.1],
+  'Manga': [0.4, 16.7, 0.3],
+  'Uva': [0.7, 13.6, 0.2],
+  'Kiwi': [1.3, 11.5, 0.6],
+  'Abacate': [1.2, 6.0, 8.4],
+  'Açaí (polpa sem açúcar)': [0.8, 6.2, 3.9],
+  'Alface': [1.3, 1.7, 0.2],
+  'Salada verde (folhas)': [1.4, 2.5, 0.2],
+  'Tomate': [1.1, 3.1, 0.2],
+  'Pepino': [0.9, 2.0, 0.0],
+  'Cenoura crua': [1.3, 7.7, 0.2],
+  'Cenoura cozida': [0.8, 6.7, 0.2],
+  'Beterraba cozida': [1.3, 7.2, 0.1],
+  'Brócolis cozido': [2.1, 4.4, 0.5],
+  'Couve-flor cozida': [1.2, 3.9, 0.3],
+  'Abobrinha cozida': [1.1, 3.0, 0.2],
+  'Chuchu cozido': [0.4, 4.8, 0.0],
+  'Couve refogada': [1.7, 8.7, 6.6],
+  'Azeite de oliva': [0.0, 0.0, 100.0],
+  'Óleo de soja': [0.0, 0.0, 100.0],
+  'Pasta de amendoim': [25.0, 20.0, 50.0],
+  'Amendoim torrado': [22.5, 18.7, 54.0],
+  'Castanha de caju': [18.5, 29.1, 46.3],
+  'Castanha-do-pará': [14.5, 15.1, 63.5],
+  'Amêndoa': [18.6, 29.5, 47.3],
+  'Mel': [0.0, 84.0, 0.0],
+  'Açúcar': [0.0, 99.5, 0.0],
+  'Chocolate ao leite': [7.2, 59.6, 30.3],
+  'Chocolate 70%': [8.0, 36.0, 43.0],
+  'Doce de leite': [5.5, 55.0, 6.0],
+  'Café sem açúcar': [0.1, 0.3, 0.0],
+  'Café com leite sem açúcar': [2.0, 3.0, 2.0],
+  'Suco de laranja natural': [0.7, 10.4, 0.1],
+  'Refrigerante': [0.0, 9.2, 0.0],
+  'Refrigerante zero': [0.0, 0.0, 0.0],
+  'Água de coco': [0.0, 5.3, 0.0],
+  'Cerveja': [0.3, 3.6, 0.0],
+  'Vinho tinto': [0.1, 2.6, 0.0]
+};
+
 const ALIMENTOS = [
   // cereais, pães e tubérculos
   ['Arroz branco cozido', 128, [['colher de sopa', 25], ['escumadeira', 90]]],
@@ -1845,12 +1999,12 @@ const ALIMENTOS = [
   ['Água de coco', 22, [['copo (200 ml)', 200]], 'ml'],
   ['Cerveja', 41, [['lata', 350], ['long neck', 355]], 'ml'],
   ['Vinho tinto', 85, [['taça', 150]], 'ml']
-].map(([nome, k100, porcoes, un]) => ({ nome, k100, porcoes, un: un || 'g' }));
+].map(([nome, k100, porcoes, un]) => { const m = MACROS100[nome] || [0, 0, 0]; return { nome, k100, porcoes, un: un || 'g', p100: m[0], c100: m[1], g100: m[2] }; });
 
 const normTxt = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
 function todosAlimentos() {
-  const meus = S.alimentos.map(a => ({ nome: a.nome, meu: true, id: a.id, kcalPorcao: num(a.kcal) || 0, porcoes: [[a.porcao || 'porção', 1]], un: null }));
+  const meus = S.alimentos.map(a => ({ nome: a.nome, meu: true, id: a.id, kcalPorcao: num(a.kcal) || 0, p: a.p, c: a.c, g: a.g, porcoes: [[a.porcao || 'porção', 1]], un: null }));
   return [...meus, ...ALIMENTOS];
 }
 function buscarAlimentos(q) {
@@ -1869,13 +2023,40 @@ function lerQuantidade(txt) {
   if (!m) return { resto: txt };
   return { qtd: num(m[1]), un: m[2] ? (m[2].toLowerCase() === 'ml' ? 'ml' : 'g') : null, resto: m[3] };
 }
+// gramas (ou ml) da quantidade escolhida; para "meus alimentos", número de porções
+function gramasDe(sel) {
+  const f = sel.food, q = num(sel.qtd) || 0;
+  if (f.meu) return q;
+  if (sel.porcao === 'g' || sel.porcao === 'ml') return q;
+  const p = f.porcoes.find(x => x[0] === sel.porcao) || f.porcoes[0];
+  return q * p[1];
+}
 function kcalDe(sel) {
   if (!sel || !sel.food) return 0;
-  const f = sel.food, q = num(sel.qtd) || 0;
-  if (f.meu) return q * f.kcalPorcao;
-  if (sel.porcao === 'g' || sel.porcao === 'ml') return q * f.k100 / 100;
-  const p = f.porcoes.find(x => x[0] === sel.porcao) || f.porcoes[0];
-  return q * p[1] * f.k100 / 100;
+  const f = sel.food, g = gramasDe(sel);
+  return f.meu ? g * f.kcalPorcao : g * f.k100 / 100;
+}
+// { p, c, g } em gramas
+function macrosDe(sel) {
+  if (!sel || !sel.food) return { p: 0, c: 0, g: 0 };
+  const f = sel.food, q = gramasDe(sel);
+  if (f.meu) return { p: q * (num(f.p) || 0), c: q * (num(f.c) || 0), g: q * (num(f.g) || 0) };
+  return { p: q * f.p100 / 100, c: q * f.c100 / 100, g: q * f.g100 / 100 };
+}
+const r1 = (v) => Math.round((num(v) || 0) * 10) / 10;
+const macroTxt = (m) => `P ${fmt1(r1(m.p))} g · C ${fmt1(r1(m.c))} g · G ${fmt1(r1(m.g))} g`;
+function macrosRefeicoes(lista) {
+  return (lista || []).reduce((t, r) => ({ p: t.p + (num(r.p) || 0), c: t.c + (num(r.c) || 0), g: t.g + (num(r.g) || 0) }), { p: 0, c: 0, g: 0 });
+}
+// barras de macros do dia, com as metas de metaMacros()
+function macrosDiaHTML(refeicoes, compacto) {
+  const t = macrosRefeicoes(refeicoes), mm = metaMacros();
+  const itens = [['Proteína', 'p', 'prot'], ['Carboidratos', 'c', 'carb'], ['Gordura', 'g', 'gord']];
+  if (compacto) return `<div class="macros-mini">${itens.map(([n, k, cls]) => `<span><i class="dot ${cls}"></i>${n.slice(0, 4)}. <b>${fmt(t[k])}</b>${mm ? `/${fmt(mm[k])}` : ''} g</span>`).join('')}</div>`;
+  return `<div class="macros">${itens.map(([n, k, cls]) => {
+    const meta = mm && mm[k], pct = meta ? Math.min(100, t[k] / meta * 100) : 0;
+    return `<div class="macro"><div class="row between"><span>${n}</span><span class="num"><b>${fmt(t[k])}</b>${meta ? ` / ${fmt(meta)}` : ''} g</span></div>${meta ? `<div class="bar ${cls}${t[k] > meta * 1.1 && k !== 'p' ? ' over' : ''}"><b style="width:${pct.toFixed(0)}%"></b></div>` : ''}</div>`;
+  }).join('')}</div>`;
 }
 function descDe(sel) {
   const f = sel.food, q = fmt1(num(sel.qtd) || 0);
@@ -1897,7 +2078,7 @@ function painelAlimento() {
   </div>`;
 }
 function painelSel() {
-  if (!addSel) return `<p class="hint">As calorias são calculadas pela quantidade. Valores aproximados das tabelas TACO e USDA.</p>`;
+  if (!addSel) return `<p class="hint">Calorias e macros (proteína, carboidratos e gordura) são calculados pela quantidade. Valores aproximados das tabelas TACO e USDA.</p>`;
   if (addSel.manual) {
     return `<div class="selbox">
       <p><strong>${esc(addSel.nome)}</strong> <span class="hint">não está na tabela</span></p>
@@ -1905,8 +2086,13 @@ function painelSel() {
         <div class="field"><label for="r-kcal">Calorias</label><input id="r-kcal" inputmode="numeric" placeholder="kcal" value="${esc(addSel.kcal || '')}"></div>
         <div class="field"><label for="r-porc-nome">Porção</label><input id="r-porc-nome" placeholder="ex.: 1 pote" value="${esc(addSel.porcaoNome || '')}"></div>
       </div>
+      <div class="fields3">
+        <div class="field"><label for="r-mp">Proteína (g)</label><input id="r-mp" inputmode="decimal" placeholder="0"></div>
+        <div class="field"><label for="r-mc">Carbo (g)</label><input id="r-mc" inputmode="decimal" placeholder="0"></div>
+        <div class="field"><label for="r-mg">Gordura (g)</label><input id="r-mg" inputmode="decimal" placeholder="0"></div>
+      </div>
       <label class="check"><input type="checkbox" id="r-salvar" ${addSel.salvar ? 'checked' : ''}> Salvar em “Meus alimentos” para as próximas vezes</label>
-      <p class="hint">Dica: pegue as calorias da porção no rótulo da embalagem.</p>
+      <p class="hint">Dica: pegue calorias e macros da porção na tabela nutricional da embalagem.</p>
       <button class="btn primary wide" data-a="addAlimento" type="button">Adicionar</button>
     </div>`;
   }
@@ -1920,6 +2106,7 @@ function painelSel() {
       <select id="r-porcao" aria-label="Medida">${opcoes.map(o => `<option ${o === addSel.porcao ? 'selected' : ''} value="${esc(o)}">${esc(o)}${!f.meu && o !== f.un ? ` (${fmt1((f.porcoes.find(p => p[0] === o) || [0, 0])[1])}${f.un})` : ''}</option>`).join('')}</select>
     </div>
     <div class="kcalout"><span class="hint">Calorias</span><input id="r-kcal" inputmode="numeric" aria-label="Calorias calculadas" value="${kcalManual ? esc(addSel.kcalEdit) : k}"><span class="hint">kcal</span></div>
+    <p class="macro-sel" id="r-macros">${macroChips(macrosDe(addSel))}</p>
     <button class="btn primary wide" data-a="addAlimento" type="button">Adicionar ao ${esc((tipoSel || tipoPorHora()).toLowerCase())}</button>
   </div>`;
 }
@@ -1933,10 +2120,13 @@ function atualizarSugs() {
   box._res = res; box._q = q;
 }
 
-function adicionarRefeicao(desc, kcal) {
+const macroChips = (m) => `<span class="mchip prot">Proteína <b>${fmt1(r1(m.p))} g</b></span><span class="mchip carb">Carbo <b>${fmt1(r1(m.c))} g</b></span><span class="mchip gord">Gordura <b>${fmt1(r1(m.g))} g</b></span>`;
+
+function adicionarRefeicao(desc, kcal, m) {
   const d = diaDe(diaSel) || { id: diaSel };
   const tipo = tipoSel || tipoPorHora();
-  store.put('diario', { ...d, refeicoes: [...(d.refeicoes || []), { tipo, desc, kcal: Math.round(kcal) || 0 }] });
+  m = m || { p: 0, c: 0, g: 0 };
+  store.put('diario', { ...d, refeicoes: [...(d.refeicoes || []), { tipo, desc, kcal: Math.round(kcal) || 0, p: r1(m.p), c: r1(m.c), g: r1(m.g) }] });
   addSel = null; kcalManual = false;
   render(); toast(`${fmt(kcal)} kcal adicionadas ao ${tipo.toLowerCase()}.`);
 }
@@ -1962,21 +2152,22 @@ Object.assign(ACOES, {
       const kcal = num($('#r-kcal').value);
       if (kcal == null) { toast('Digite as calorias.'); $('#r-kcal').focus(); return; }
       const porc = $('#r-porc-nome').value.trim();
-      if ($('#r-salvar').checked && addSel.nome) store.put('alimentos', { id: novoId(), nome: addSel.nome, kcal, porcao: porc || 'porção' });
-      adicionarRefeicao(addSel.nome + (porc ? ` · ${porc}` : ''), kcal);
+      const m = { p: num($('#r-mp').value) || 0, c: num($('#r-mc').value) || 0, g: num($('#r-mg').value) || 0 };
+      if ($('#r-salvar').checked && addSel.nome) store.put('alimentos', { id: novoId(), nome: addSel.nome, kcal, porcao: porc || 'porção', p: m.p, c: m.c, g: m.g });
+      adicionarRefeicao(addSel.nome + (porc ? ` · ${porc}` : ''), kcal, m);
       return;
     }
     const kcal = num($('#r-kcal').value);
     if (!(num(addSel.qtd) > 0)) { toast('Informe a quantidade.'); return; }
-    adicionarRefeicao(descDe(addSel), kcal ?? kcalDe(addSel));
+    adicionarRefeicao(descDe(addSel), kcal ?? kcalDe(addSel), macrosDe(addSel));
   }
 });
 
 function inputAlimento(t) {
   if (t.id === 'r-busca') { addSel = null; kcalManual = false; $('#r-sel').innerHTML = painelSel(); atualizarSugs(); return true; }
-  if (t.id === 'r-qtd' && addSel) { addSel.qtd = t.value; kcalManual = false; const k = $('#r-kcal'); if (k) k.value = Math.round(kcalDe(addSel)); return true; }
+  if (t.id === 'r-qtd' && addSel) { addSel.qtd = t.value; kcalManual = false; const k = $('#r-kcal'); if (k) k.value = Math.round(kcalDe(addSel)); const mm = $('#r-macros'); if (mm) mm.innerHTML = macroChips(macrosDe(addSel)); return true; }
   if (t.id === 'r-kcal' && addSel && !addSel.manual) { kcalManual = true; addSel.kcalEdit = t.value; return true; }
-  if (t.id === 'r-kcal' || t.id === 'r-porc-nome') return true;
+  if (['r-kcal', 'r-porc-nome', 'r-mp', 'r-mc', 'r-mg'].includes(t.id)) return true;
   return false;
 }
 function changeAlimento(t) {
@@ -1989,7 +2180,7 @@ function changeAlimento(t) {
     } else if (antes === 'g' || antes === 'ml') { addSel.qtd = 1; }
     $('#r-sel').innerHTML = painelSel(); return true;
   }
-  if (['r-busca', 'r-qtd', 'r-kcal', 'r-porc-nome', 'r-salvar'].includes(t.id)) { if (t.id === 'r-salvar' && addSel) addSel.salvar = t.checked; return true; }
+  if (['r-busca', 'r-qtd', 'r-kcal', 'r-porc-nome', 'r-salvar', 'r-mp', 'r-mc', 'r-mg'].includes(t.id)) { if (t.id === 'r-salvar' && addSel) addSel.salvar = t.checked; return true; }
   return false;
 }
 
