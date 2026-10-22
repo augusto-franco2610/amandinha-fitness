@@ -1842,7 +1842,9 @@ function limparNome(s) {
   return s.replace(/[\s\-–—:|,;.]+$/, '').replace(/^[\s\-–—:|,;.]+/, '').replace(/\s{2,}/g, ' ').trim();
 }
 function ehCabecalho(l) {
+  if (RX_SXR.test(l) || RX_SERIES.test(l)) return false;
   if (/^(treino|ficha|dia|day|workout)\b/i.test(l)) return true;
+  if (/\b(treino|ficha)\s*[A-F]\b/i.test(l) && l.length < 50) return true;   // "Segunda — Treino A"
   if (/^[A-F]\s*[-:–).]\s*\S/.test(l) && !RX_SXR.test(l)) return true;
   if (/^[A-F]$/.test(l)) return true;
   return /:$/.test(l) && !RX_SXR.test(l) && l.length < 40;
@@ -1850,6 +1852,8 @@ function ehCabecalho(l) {
 function nomeFicha(l, idx) {
   let m = l.match(/^(?:treino|ficha)\s*([A-F])\b\s*[-:–)]*\s*(.*)$/i);
   if (m) return { nome: `Treino ${m[1].toUpperCase()}`, foco: limparNome(m[2]) };
+  m = l.match(/^(.*?)\b(?:treino|ficha)\s*([A-F])\b(.*)$/i);
+  if (m) return { nome: `Treino ${m[2].toUpperCase()}`, foco: limparNome((m[1] + ' ' + m[3]).trim()) };
   m = l.match(/^([A-F])\s*[-:–).]*\s*(.*)$/);
   if (m) return { nome: `Treino ${m[1]}`, foco: limparNome(m[2]) };
   const t = limparNome(l.replace(/^(treino|ficha)\s*/i, ''));
@@ -1858,26 +1862,35 @@ function nomeFicha(l, idx) {
 
 function parseTexto(txt) {
   const fichas = []; let cur = null;
+  // se o arquivo usa "3x12" em algum lugar, só aceita como exercício as linhas com séries x reps
+  const estrito = String(txt).split(/\r?\n/).some(l => RX_SXR.test(l) || RX_SERIES.test(l));
+  // descanso geral do documento, ex.: "Descanse 60–90 segundos entre séries" (usa o maior valor)
+  const dg = String(txt).match(/descans\w*\s+(?:de\s+)?(\d{2,3})(?:\s*(?:-|–|a)\s*(\d{2,3}))?\s*(?:s|seg|segundos)\b/i);
+  const descansoPadrao = dg ? num(dg[2] || dg[1]) : 60;
+  let pendente = '';   // nome de exercício numa linha e "2 × 12" na linha seguinte
   const nova = (info) => { cur = { nome: info.nome, foco: info.foco || '', exercicios: [] }; fichas.push(cur); };
   for (const raw of String(txt).split(/\r?\n/)) {
     let l = raw.replace(/\t/g, ' ').replace(/^\s*(?:\d{1,2}\s*[.)\-–]\s+|[-•*·▪●]\s*)/, '').trim();
     if (!l) continue;
-    if (ehCabecalho(l)) { nova(nomeFicha(l, fichas.length)); continue; }
+    if (/^(exerc[ií]cios?|s[ée]ries)\b/i.test(l)) continue;           // cabeçalho de tabela
+    if (ehCabecalho(l)) { nova(nomeFicha(l, fichas.length)); pendente = ''; continue; }
     let m = l.match(RX_SXR) || l.match(RX_SERIES);
     let nome, series = 3, reps = '10-12', resto = '';
     if (m) {
       nome = limparNome(l.slice(0, m.index));
       series = num(m[1]) || 3; reps = m[2].replace(/\s+/g, ' ').replace(/\s*(reps?|repetiç\w*)$/i, '').trim();
       resto = l.slice(m.index + m[0].length);
-      if (!nome) nome = limparNome(resto.replace(/\d+\s*(?:s|seg|min)\b.*/i, ''));
+      if (!nome) nome = pendente || limparNome(resto.replace(/\d+\s*(?:s|seg|min)\b.*/i, ''));
+      pendente = '';
     } else {
       // linha sem séries x reps: só aceita se parecer nome de exercício
-      if (!cur || /\d/.test(l) || l.split(/\s+/).length > 6 || /:/.test(l)) continue;
+      pendente = (!/\d/.test(l) && !/:/.test(l) && l.split(/\s+/).length <= 8) ? limparNome(l) : '';
+      if (estrito || !cur || /\d/.test(l) || l.split(/\s+/).length > 6 || /:/.test(l)) continue;
       nome = limparNome(l);
     }
     if (!nome || nome.length < 3) continue;
     if (!cur) nova({ nome: 'Treino A', foco: '' });
-    cur.exercicios.push({ nome: nome.charAt(0).toUpperCase() + nome.slice(1), series, reps, descanso: lerDescanso(resto) || 60 });
+    cur.exercicios.push({ nome: nome.charAt(0).toUpperCase() + nome.slice(1), series, reps, descanso: lerDescanso(resto) || descansoPadrao });
   }
   return fichas.filter(f => f.exercicios.length);
 }
