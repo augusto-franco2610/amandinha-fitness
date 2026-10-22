@@ -581,6 +581,17 @@ input:focus, select:focus, textarea:focus { background-color: var(--field); }
 .mchip.gord { border-color: color-mix(in srgb, var(--gord) 35%, transparent); }
 .meal-tot { padding-top: 2px; }
 
+/* ---------- Frase motivacional ---------- */
+.frase { position: relative; text-align: left; border: 0; gap: 6px; padding: 22px 22px 16px; overflow: hidden; --fc: var(--accent); --fs: var(--accent-soft); background: linear-gradient(135deg, var(--fs), var(--surface) 75%); }
+.frase.f-rosa { --fc: #e0306a; --fs: #fde8ef; }
+.frase.f-verde { --fc: #248a3d; --fs: #e5f5e9; }
+.frase.f-laranja { --fc: #c25e00; --fs: #fff1e0; }
+.frase.f-roxo { --fc: #8944ab; --fs: #f3e9f9; }
+.frase .aspas { position: absolute; top: -18px; right: 14px; font-size: 7rem; line-height: 1; font-weight: 700; color: var(--fc); opacity: .14; font-family: Georgia, "Times New Roman", serif; }
+.frase-txt { font-size: 1.25rem; font-weight: 600; line-height: 1.3; letter-spacing: -0.015em; color: var(--fg); max-width: 32ch; text-wrap: pretty; position: relative; }
+.frase-dica { color: var(--fc); font-weight: 500; font-size: .8125rem; }
+.frase:active { transform: scale(.985); }
+
 </style>
 </head>
 <body>
@@ -919,6 +930,7 @@ const VIEWS = {
     const pct = meta ? Math.min(100, d.consumidas / meta * 100) : 0;
     return `
       <section class="hello"><p class="eyebrow">${dataLonga(hj)}</p><h1>Oi, ${esc(primeiroNome())}</h1></section>
+      ${fraseHTML()}
       ${avisosHoje()}
       ${treinoCard}
       <div class="grid2">
@@ -1599,6 +1611,80 @@ function cardMeta() {
     <p class="disclaimer">Estimativa pela fórmula de Mifflin-St Jeor. Macros: proteína de 1,6 g por kg do peso-meta, gordura em 25% das calorias e carboidratos com o restante. Com Mounjaro o apetite costuma cair: evite ficar muito abaixo da meta e priorize proteína. Ajustes de dieta devem seguir a orientação do médico ou da nutricionista.</p>
   </div>`;
 }
+
+/* =====================================================================
+   FRASES MOTIVACIONAIS — uma nova a cada vez que o app é aberto
+   (toque no card para ver outra)
+   ===================================================================== */
+const FRASES = [
+  'Cada treino feito é uma promessa cumprida com você mesma.',
+  'Não precisa ser perfeito. Precisa ser hoje.',
+  'Seu corpo agradece cada escolha boa, mesmo as pequenas.',
+  'Constância vence intensidade. Um dia de cada vez.',
+  'Você não está começando do zero. Está começando da experiência.',
+  'O progresso que ninguém vê ainda é progresso.',
+  'Devagar também chega. E chega mais longe.',
+  'Cuidar de você é prioridade, não luxo.',
+  'Hoje é um ótimo dia para se orgulhar de si mesma.',
+  'Disciplina é lembrar o que você quer de verdade.',
+  'Treino ruim é aquele que não aconteceu.',
+  'Você é mais forte do que a vontade de desistir.',
+  'Pequenos passos todos os dias viram grandes mudanças.',
+  'A balança não mede sua força, sua coragem nem sua dedicação.',
+  'Comer bem é um carinho que você faz em si mesma.',
+  'Quando der vontade de parar, lembre por que começou.',
+  'Sua única competição é a versão de ontem.',
+  'Beba água, respire fundo e siga em frente.',
+  'O cansaço passa. O orgulho de ter ido fica.',
+  'Você já venceu dias difíceis antes. Vai vencer este também.',
+  'Resultados chegam para quem continua.',
+  'Hoje, faça algo que a você do futuro vai agradecer.',
+  'Força não é só levantar peso. É levantar todo dia.',
+  'Descansar também faz parte do plano.',
+  'Você merece se sentir bem no próprio corpo.',
+  'Um treino de 20 minutos vale mais que nenhum.',
+  'A motivação te faz começar. O hábito te faz continuar.',
+  'Seja gentil com você nos dias difíceis.',
+  'Cada série conta. Cada passo conta. Você conta.',
+  'Mudança de verdade é construída, não apressada.',
+  'Respeite seu ritmo. Ele é só seu.',
+  'O suor de hoje é a energia de amanhã.',
+  'Você não precisa ver a escada inteira, só o próximo degrau.',
+  'Escolher se cuidar já é uma vitória.',
+  'Seu esforço de hoje está escrevendo a sua melhor história.',
+  'Não compare o seu começo com o meio de ninguém.',
+  'Foco no processo. O resultado é consequência.',
+  'Você é capaz de coisas incríveis. Inclusive de não desistir.',
+  'Um dia ruim não apaga uma semana boa.',
+  'Celebre cada conquista, por menor que pareça.'
+];
+const CORES_FRASE = ['f-azul', 'f-rosa', 'f-verde', 'f-laranja', 'f-roxo'];
+
+// escolhe uma frase diferente da última vista, uma vez por abertura do app
+let fraseIdx = (() => {
+  const ult = lsGet('af:ultimaFrase', -1);
+  let i = Math.floor(Math.random() * FRASES.length);
+  if (i === ult) i = (i + 1) % FRASES.length;
+  lsSet('af:ultimaFrase', i);
+  return i;
+})();
+
+function fraseHTML() {
+  return `<button class="card frase ${CORES_FRASE[fraseIdx % CORES_FRASE.length]}" data-a="novaFrase" type="button" aria-label="Frase do dia. Toque para ver outra">
+    <span class="aspas" aria-hidden="true">“</span>
+    <p class="frase-txt">${esc(FRASES[fraseIdx])}</p>
+    <span class="hint frase-dica">Toque para outra frase</span>
+  </button>`;
+}
+
+Object.assign(ACOES, {
+  novaFrase() {
+    let i = Math.floor(Math.random() * FRASES.length);
+    if (i === fraseIdx) i = (i + 1) % FRASES.length;
+    fraseIdx = i; lsSet('af:ultimaFrase', i);
+    const el = document.querySelector('.frase'); if (el) el.outerHTML = fraseHTML();
+  }
+});
 
 /* =====================================================================
    CARDIO — esteira, caminhada, bike etc. dentro das fichas
