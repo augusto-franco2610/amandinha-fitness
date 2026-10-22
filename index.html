@@ -592,6 +592,22 @@ input:focus, select:focus, textarea:focus { background-color: var(--field); }
 .frase-dica { color: var(--fc); font-weight: 500; font-size: .8125rem; }
 .frase:active { transform: scale(.985); }
 
+/* ---------- Figura com volume e músculos ---------- */
+.demo-svg { background: linear-gradient(180deg, #f8f9fb, #eceff3); }
+.demo-svg .bo { stroke: #8f99a6; fill: none; stroke-linecap: round; }
+.demo-svg .bf { stroke: #e6e9ee; fill: none; stroke-linecap: round; }
+.demo-svg .bo.far { stroke: #a9b1bb; }
+.demo-svg .bf.far { stroke: #cfd5dc; }
+.demo-svg .tronco { fill: #e6e9ee; stroke: #8f99a6; stroke-width: 1.4; stroke-linejoin: round; }
+.demo-svg .cab { fill: #e6e9ee; stroke: #8f99a6; stroke-width: 1.4; }
+.demo-svg .mu { stroke: #e5484d; stroke-linecap: round; fill: none; opacity: .92; }
+.demo-svg .mu-f { fill: #e5484d; opacity: .88; }
+.demo-svg .eq { stroke: #7d8692; }
+.demo-svg .peso { fill: #4a5361; }
+.demo-svg .peso-in { fill: #eceff3; }
+.musc-tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.musc { font-size: .75rem; font-weight: 600; color: #c0292f; background: #fdecee; border-radius: 999px; padding: 3px 10px; }
+
 </style>
 </head>
 <body>
@@ -657,7 +673,7 @@ const FIREBASE_CONFIG = {
 const EMAILS_PERMITIDOS = [];
 // Nome do atalho no app Atalhos do iPhone que grava no Apple Saúde.
 const NOME_ATALHO = "Amandinha Saúde";
-const APP_VERSAO = "22/10 · cardio e macros";
+const APP_VERSAO = "22/10 · cardio, macros e músculos";
 // Endereço do servidor (Cloudflare Worker) que cuida do Strava e das notificações. Ex.: "https://amandinha-fitness.seu-usuario.workers.dev"
 const WORKER_URL = "";
 // Client ID do app criado em strava.com/settings/api (é público, pode ficar aqui).
@@ -2903,39 +2919,95 @@ const PADROES = {
   // vistas de frente
   lateral: {
     front: true, A: { a: 8 }, B: { a: 85 },
-    render: (p) => frente({ braco: p.a }),
+    render: (p, hl) => frente({ braco: p.a }, hl),
     dicas: ['Cotovelos levemente flexionados', 'Eleve os braços pelas laterais até a altura dos ombros', 'Desça devagar, sem usar impulso do corpo']
   },
   abdutora: {
     front: true, A: { d: 2 }, B: { d: 15 },
-    render: (p) => frente({ sentada: true, abre: p.d }),
+    render: (p, hl) => frente({ sentada: true, abre: p.d }, hl),
     dicas: ['Costas apoiadas e quadril encaixado no banco', 'Abra as pernas empurrando com a parte de fora das coxas', 'Volte devagar, sem deixar o peso bater']
   }
 };
 
-function frente(o) {
+/* ---------- corpo com volume e músculos destacados ---------- */
+const MUSCULOS = {
+  agachamento: { hl: ['coxa', 'gluteo'], nomes: ['Quadríceps', 'Glúteos'] },
+  legpress: { hl: ['coxa', 'gluteo'], nomes: ['Quadríceps', 'Glúteos'] },
+  extensora: { hl: ['coxa'], nomes: ['Quadríceps'] },
+  flexora: { hl: ['coxa'], nomes: ['Posterior de coxa'] },
+  pelvica: { hl: ['gluteo', 'coxa'], nomes: ['Glúteos', 'Posterior de coxa'] },
+  panturrilha: { hl: ['canela'], nomes: ['Panturrilha'] },
+  supino: { hl: ['peito', 'braco', 'ombro'], nomes: ['Peitoral', 'Tríceps', 'Ombros'] },
+  puxada: { hl: ['costas', 'braco'], nomes: ['Dorsais', 'Bíceps'] },
+  remada: { hl: ['costas', 'braco'], nomes: ['Costas', 'Bíceps'] },
+  curvada: { hl: ['costas', 'braco'], nomes: ['Costas', 'Bíceps'] },
+  desenvolvimento: { hl: ['ombro', 'braco'], nomes: ['Ombros', 'Tríceps'] },
+  frontal: { hl: ['ombro'], nomes: ['Ombros'] },
+  lateral: { hl: ['ombro'], nomes: ['Ombros'] },
+  triceps: { hl: ['braco'], nomes: ['Tríceps'] },
+  rosca: { hl: ['braco', 'antebraco'], nomes: ['Bíceps', 'Antebraço'] },
+  stiff: { hl: ['coxa', 'gluteo', 'costas'], nomes: ['Posterior de coxa', 'Glúteos', 'Lombar'] },
+  bulgaro: { hl: ['coxa', 'gluteo'], nomes: ['Quadríceps', 'Glúteos'] },
+  gluteo: { hl: ['gluteo', 'coxa2'], nomes: ['Glúteos'] },
+  prancha: { hl: ['abdomen', 'ombro'], nomes: ['Abdômen', 'Ombros'] },
+  abdominal: { hl: ['abdomen'], nomes: ['Abdômen'] },
+  abdutora: { hl: ['gluteo', 'coxa'], nomes: ['Glúteo médio', 'Abdutores'] },
+  esteira: { hl: ['coxa', 'canela'], nomes: ['Pernas', 'Coração'] },
+  caminhada: { hl: ['coxa', 'canela'], nomes: ['Pernas', 'Coração'] }
+};
+const f1 = (v) => v.toFixed(1);
+function ln(a, b, w, cls) { return `<line class="${cls}" x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke-width="${w}"/>`; }
+const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+// membro com contorno, preenchimento e, se trabalhado, o músculo em vermelho
+function membro(a, b, w, hl, far) {
+  let s = ln(a, b, w + 1.8, 'bo' + (far ? ' far' : '')) + ln(a, b, w, 'bf' + (far ? ' far' : ''));
+  if (hl) s += ln(lerp(a, b, 0.14), lerp(a, b, 0.8), w * 0.62, 'mu');
+  return s;
+}
+function tronco(hip, neck, hl) {
+  const L = Math.hypot(neck[0] - hip[0], neck[1] - hip[1]) || 1;
+  const u = [(neck[0] - hip[0]) / L, (neck[1] - hip[1]) / L], n = [-u[1], u[0]];   // n aponta para a frente do corpo
+  const off = (p, d) => [p[0] + n[0] * d, p[1] + n[1] * d];
+  const at = (t, d) => off(lerp(hip, neck, t), d);
+  const pts = [off(hip, 6.2), at(0.55, 7.4), off(neck, 7.6), off(neck, -7.2), at(0.5, -6.6), off(hip, -6.6)];
+  let s = `<path class="tronco" d="M${pts.map(p => f1(p[0]) + ',' + f1(p[1])).join('L')}Z"/>`;
+  if (hl.includes('costas')) s += ln(at(0.3, -3.6), at(0.9, -3.8), 5.2, 'mu');
+  if (hl.includes('peito')) s += ln(at(0.62, 3.6), at(0.9, 3.8), 5.4, 'mu');
+  if (hl.includes('abdomen')) s += ln(at(0.12, 3.2), at(0.52, 3.6), 4.8, 'mu');
+  if (hl.includes('gluteo')) s += `<circle class="mu-f" cx="${f1(off(hip, -4.2)[0])}" cy="${f1(off(hip, -4.2)[1])}" r="5.6"/>`;
+  return s;
+}
+function cabeca(c) { return `<circle class="cab" cx="${f1(c[0])}" cy="${f1(c[1])}" r="${LEN.hd}"/>`; }
+function ombroHL(p) { return `<circle class="mu-f" cx="${f1(p[0])}" cy="${f1(p[1])}" r="4.4"/>`; }
+
+function frente(o, hl) {
+  hl = hl || [];
   const cx = 80; let s = `<line class="chao" x1="4" x2="156" y1="${G}" y2="${G}"/>`;
   if (o.sentada) {
     const hy = 64;
     s += `<rect class="eq" x="62" y="${hy + 3}" width="36" height="5" rx="2"/><line class="eq thin" x1="80" y1="${hy + 8}" x2="80" y2="${G}"/><line class="eq" x1="64" y1="${hy}" x2="64" y2="28"/><line class="eq" x1="96" y1="${hy}" x2="96" y2="28"/>`;
+    s += `<path class="tronco" d="M${cx - 7},${hy} L${cx - 9},${hy - 26} L${cx + 9},${hy - 26} L${cx + 7},${hy} Z"/>`;
     [-1, 1].forEach(sd => {
       const kx = cx + sd * (6 + o.abre), ky = hy + 6;
-      s += `<polyline class="fig" points="${cx + sd * 5},${hy} ${kx.toFixed(1)},${ky} ${(kx + sd * 1).toFixed(1)},${G - 2} ${(kx + sd * 5).toFixed(1)},${G - 2}"/>`;
-      s += eq.rolo([kx + sd * 4, ky - 1]);
-      s += `<polyline class="fig" points="${cx + sd * 8},${hy - 26} ${cx + sd * 13},${hy - 12} ${cx + sd * 16},${hy - 2}"/>`;
+      s += membro([cx + sd * 5, hy], [kx, ky], 8, hl.includes('coxa')) + membro([kx, ky], [kx + sd, G - 3], 6, false);
+      s += eq.rolo([kx + sd * 5, ky - 1]);
+      if (hl.includes('gluteo')) s += `<circle class="mu-f" cx="${cx + sd * 7}" cy="${hy - 1}" r="3.6"/>`;
+      s += membro([cx + sd * 10, hy - 24], [cx + sd * 13, hy - 12], 5.4, false) + membro([cx + sd * 13, hy - 12], [cx + sd * 15, hy - 3], 4.6, false);
     });
-    s += `<line class="fig" x1="${cx}" y1="${hy}" x2="${cx}" y2="${hy - 28}"/><line class="fig" x1="${cx - 8}" y1="${hy - 26}" x2="${cx + 8}" y2="${hy - 26}"/><circle class="cabeca" cx="${cx}" cy="${hy - 36}" r="${LEN.hd}"/>`;
+    s += cabeca([cx, hy - 34]);
     return s;
   }
   const hy = 50, sy = 22;
+  s += `<path class="tronco" d="M${cx - 7},${hy} L${cx - 10},${sy} L${cx + 10},${sy} L${cx + 7},${hy} Z"/>`;
   [-1, 1].forEach(sd => {
-    s += `<polyline class="fig" points="${cx + sd * 4},${hy} ${cx + sd * 6},${hy + 21} ${cx + sd * 7},${G}"/>`;
-    const sh = [cx + sd * 9, sy + 2];
+    s += membro([cx + sd * 4.5, hy], [cx + sd * 6, hy + 21], 8.4, hl.includes('coxa')) + membro([cx + sd * 6, hy + 21], [cx + sd * 7, G - 2], 6.4, false);
+    const sh = [cx + sd * 10, sy + 2];
     const el = soma(sh, [Math.sin(rad(o.braco)) * 15 * sd, Math.cos(rad(o.braco)) * 15]);
     const hd = soma(el, [Math.sin(rad(o.braco + 8)) * 14 * sd, Math.cos(rad(o.braco + 8)) * 14]);
-    s += `<polyline class="fig" points="${P(sh)} ${P(el)} ${P(hd)}"/>` + eq.halter(hd);
+    s += membro(sh, el, 5.6, hl.includes('braco')) + membro(el, hd, 4.8, false) + eq.halter(hd);
+    if (hl.includes('ombro')) s += ombroHL(sh);
   });
-  s += `<line class="fig" x1="${cx}" y1="${hy}" x2="${cx}" y2="${sy}"/><line class="fig" x1="${cx - 9}" y1="${sy + 2}" x2="${cx + 9}" y2="${sy + 2}"/><line class="fig" x1="${cx - 4}" y1="${hy}" x2="${cx + 4}" y2="${hy}"/><circle class="cabeca" cx="${cx}" cy="${sy - 8}" r="${LEN.hd}"/>`;
+  s += cabeca([cx, sy - 8]);
   return s;
 }
 
@@ -2968,15 +3040,17 @@ function juntas(p) {
   if (p.th2 != null) { J.knee2 = soma(hip, vec(p.th2, LEN.th)); J.ankle2 = soma(J.knee2, vec(p.sh2, LEN.sh)); J.toe2 = soma(J.ankle2, vec(p.sh2 + 90, 5)); }
   return J;
 }
-function desenhar(pd, p) {
-  if (pd.front) return pd.render(p);
+function desenhar(pd, p, pad) {
+  const hl = (MUSCULOS[pad] || {}).hl || [];
+  if (pd.front) return pd.render(p, hl);
   const J = juntas(p);
   let s = `<line class="chao" x1="4" x2="156" y1="${G}" y2="${G}"/>` + (pd.est || '');
-  if (J.knee2) s += `<polyline class="fig f2" points="${P(J.hip)} ${P(J.knee2)} ${P(J.ankle2)} ${P(J.toe2)}"/>`;
-  s += `<polyline class="fig" points="${P(J.hip)} ${P(J.knee)} ${P(J.ankle)} ${P(J.toe)}"/>`;
-  s += `<line class="fig" x1="${J.hip[0].toFixed(1)}" y1="${J.hip[1].toFixed(1)}" x2="${J.neck[0].toFixed(1)}" y2="${J.neck[1].toFixed(1)}"/>`;
-  s += `<circle class="cabeca" cx="${J.head[0].toFixed(1)}" cy="${J.head[1].toFixed(1)}" r="${LEN.hd}"/>`;
-  s += `<polyline class="fig" points="${P(J.neck)} ${P(J.elbow)} ${P(J.hand)}"/>`;
+  if (J.knee2) s += membro(J.hip, J.knee2, 8.4, hl.includes('coxa2'), true) + membro(J.knee2, J.ankle2, 6.4, false, true) + ln(J.ankle2, J.toe2, 4, 'bf far');
+  s += tronco(J.hip, J.neck, hl);
+  s += membro(J.hip, J.knee, 8.6, hl.includes('coxa')) + membro(J.knee, J.ankle, 6.6, hl.includes('canela')) + ln(J.ankle, J.toe, 4.2, 'bo') + ln(J.ankle, J.toe, 3, 'bf');
+  s += ln(J.neck, J.head, 4.4, 'bf') + cabeca(J.head);
+  s += membro(J.neck, J.elbow, 5.6, hl.includes('braco')) + membro(J.elbow, J.hand, 4.8, hl.includes('antebraco'));
+  if (hl.includes('ombro')) s += ombroHL(J.neck);
   if (pd.dyn) s += pd.dyn(J);
   return s;
 }
@@ -2998,7 +3072,8 @@ function demoHTML(nome) {
   }
   const pd = PADROES[pad];
   return `<div class="demo">
-    <svg class="demo-svg" viewBox="0 0 160 100" data-pad="${pad}" role="img" aria-label="Demonstração de ${esc(nome)}">${desenhar(pd, pd.A)}</svg>
+    <svg class="demo-svg" viewBox="0 0 160 100" data-pad="${pad}" role="img" aria-label="Demonstração de ${esc(nome)}">${desenhar(pd, pd.A, pad)}</svg>
+    ${MUSCULOS[pad] ? `<p class="musc-tags"><span class="hint">Trabalha:</span>${MUSCULOS[pad].nomes.map(m => `<span class="musc">${esc(m)}</span>`).join('')}</p>` : ''}
     <ul class="dicas">${pd.dicas.map(d => `<li>${esc(d)}</li>`).join('')}</ul>
     <a class="video" href="${busca}" target="_blank" rel="noopener">Ver vídeo da execução ↗</a>
   </div>`;
@@ -3019,7 +3094,7 @@ function animarDemos(ts) {
   svgs.forEach(svg => {
     const r = svg.getBoundingClientRect(); if (r.bottom < 0 || r.top > H) return;
     const pd = PADROES[svg.dataset.pad]; if (!pd) return;
-    svg.innerHTML = desenhar(pd, interp(pd.A, pd.B, k));
+    svg.innerHTML = desenhar(pd, interp(pd.A, pd.B, k), svg.dataset.pad);
   });
 }
 requestAnimationFrame(animarDemos);
