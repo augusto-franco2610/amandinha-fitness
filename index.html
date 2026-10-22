@@ -657,6 +657,7 @@ const FIREBASE_CONFIG = {
 const EMAILS_PERMITIDOS = [];
 // Nome do atalho no app Atalhos do iPhone que grava no Apple Saúde.
 const NOME_ATALHO = "Amandinha Saúde";
+const APP_VERSAO = "22/10 · cardio e macros";
 // Endereço do servidor (Cloudflare Worker) que cuida do Strava e das notificações. Ex.: "https://amandinha-fitness.seu-usuario.workers.dev"
 const WORKER_URL = "";
 // Client ID do app criado em strava.com/settings/api (é público, pode ficar aqui).
@@ -1336,7 +1337,8 @@ function abrirPerfil() {
       <button class="btn" data-a="backup" type="button">Copiar backup</button>
       <textarea id="backup-txt" hidden readonly aria-label="Backup"></textarea>
     </div>
-    <button class="btn danger" data-a="sair" type="button">${store.mode === 'cloud' ? 'Sair da conta' : 'Sair do modo demonstração'}</button>`);
+    <button class="btn danger" data-a="sair" type="button">${store.mode === 'cloud' ? 'Sair da conta' : 'Sair do modo demonstração'}</button>
+    <p class="hint" style="text-align:center">Versão ${esc(APP_VERSAO)}</p>`);
 }
 
 /* ---------------- sheet ---------------- */
@@ -2500,27 +2502,32 @@ function mostrarPrevia(fichas) {
         ? `<div class="item"><span>${esc(e.nome)} <span class="chip teal">cardio</span>${e.plano && e.plano.length ? `<br><span class="hint">plano para ${Math.max(...e.plano.map(p => p.ate))} semanas</span>` : ''}</span><span class="k">${fmt(e.minutos)} min</span><span></span></div>`
         : `<div class="item"><span>${esc(e.nome)}</span><span class="k">${e.series}×${esc(e.reps)} · ${e.descanso}s</span><span></span></div>`).join('')}</div>`).join('')}
     ${fichas.inicioPlano ? `<p class="hint">Início do plano: ${dataCurta(fichas.inicioPlano)}.</p>` : ''}
-    <button class="cta" data-a="impAdd" type="button">Adicionar às minhas fichas</button>
-    <button class="btn danger wide" data-a="impSubst" type="button">Substituir as fichas atuais</button>
-    <p class="hint">Dá para ajustar tudo depois em Editar.</p>`;
+    <button class="cta" data-a="impUsar" type="button">Usar estas fichas</button>
+    <p class="hint">Troca as fichas de exemplo e as que tiverem o mesmo nome (Treino A, B…). Suas outras fichas continuam.</p>
+    <button class="btn wide" data-a="impAdd" type="button">Adicionar sem apagar nenhuma</button>
+    <button class="link-danger" data-a="impSubst" type="button">Apagar todas as fichas e usar só estas</button>`;
   box.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
-function salvarImport(substituir) {
+function salvarImport(modo) {
   if (!impPrev) return;
-  if (substituir) S.fichas.slice().forEach(f => store.del('fichas', f.id));
+  const nomesNovos = new Set(impPrev.map(f => normTxt(f.nome)));
+  if (modo === 'tudo') S.fichas.slice().forEach(f => store.del('fichas', f.id));
+  else if (modo === 'usar') S.fichas.slice().filter(f => f.exemplo || nomesNovos.has(normTxt(f.nome))).forEach(f => store.del('fichas', f.id));
   const base = S.fichas.length;
   impPrev.forEach((f, i) => store.put('fichas', { id: novoId(), nome: f.nome, foco: f.foco, dia: f.dia ?? null, ordem: base + i, exercicios: f.exercicios }));
   const temPlano = impPrev.some(f => f.exercicios.some(e => e.plano && e.plano.length));
   if (impPrev.inicioPlano || (temPlano && !cfg().inicioPlano)) salvarCfg({ inicioPlano: impPrev.inicioPlano || hoje() });
-  const n = impPrev.length; impPrev = null; fecharSheet(); aba = 'treino'; render(true);
-  toast(`${n} ficha${n > 1 ? 's importadas' : ' importada'}.`);
+  const n = impPrev.length, comCardio = impPrev.some(f => f.exercicios.some(e => e.tipo === 'cardio'));
+  impPrev = null; fecharSheet(); aba = 'treino'; render(true);
+  toast(`${n} ficha${n > 1 ? 's importadas' : ' importada'}${comCardio ? ', com cardio' : ''}.`);
 }
 
 Object.assign(ACOES, {
   abrirImport() { abrirImport(); },
   impTexto() { const t = $('#imp-txt').value; if (!t.trim()) { toast('Cole o texto da ficha primeiro.'); return; } mostrarPrevia(parseTexto(t)); },
-  impAdd() { salvarImport(false); },
-  impSubst(b) { if (!armar(b, 'Toque de novo: apaga as fichas atuais')) return; salvarImport(true); }
+  impUsar() { salvarImport('usar'); },
+  impAdd() { salvarImport('somar'); },
+  impSubst(b) { if (!armar(b, 'Toque de novo para apagar todas')) return; salvarImport('tudo'); }
 });
 
 async function changeImport(t) {
